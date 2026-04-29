@@ -1,0 +1,70 @@
+{
+  "mcpServers": {
+    "_comment_required": "=== REQUERIDOS — mínimo para el kit ===",
+
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["-y", "n8n-mcp"],
+      "env": {
+        "N8N_API_URL": "https://YOUR_N8N_URL/",
+        "N8N_API_KEY": "YOUR_N8N_API_KEY",
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true"
+      }
+    },
+
+    "_comment_playwright": "=== PLAYWRIGHT — Elegir UN modo (A o B, no ambos) ===",
+
+    "_comment_playwright_mode_a": "Modo A: Playwright lanza Chrome con perfil persistente (RECOMENDADO para debug con sesión activa)",
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser=chrome",
+        "--user-data-dir=/Users/YOUR_MACOS_USERNAME/Library/Application Support/Google/Chrome/YOUR_CHROME_PROFILE"
+      ]
+    },
+
+    "_comment_playwright_mode_b": "Modo B: Conectar a Chrome ya corriendo con CDP (descomentar y comentar Modo A si prefieres este)",
+    "_playwright_cdp_disabled": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--cdp-endpoint=http://localhost:9222"
+      ]
+    },
+    "_comment_playwright_cdp_launch": "Para Modo B, lanzar Chrome manualmente primero: /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222 --user-data-dir='/Users/YOUR_USER/Library/Application Support/Google/Chrome/YOUR_PROFILE'",
+
+    "_comment_optional": "=== OPCIONALES — Agregar según necesidad ===",
+
+    "coolify": {
+      "command": "npx",
+      "args": ["-y", "@masonator/coolify-mcp"],
+      "env": {
+        "COOLIFY_ACCESS_TOKEN": "YOUR_COOLIFY_API_TOKEN",
+        "COOLIFY_BASE_URL": "https://YOUR_COOLIFY_URL/"
+      }
+    },
+
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=YOUR_SUPABASE_PROJECT_REF"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "YOUR_SUPABASE_ACCESS_TOKEN"
+      }
+    },
+
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT"
+      }
+    }
+  }
+}

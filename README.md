@@ -1,129 +1,227 @@
 # n8n-automation-kit
 
-Kit completo para conectar Claude Code con n8n en producción. Incluye MCPs, skills especializadas, subagentes, templates y workflows reales como referencia.
+Kit completo para conectar Claude Code con n8n en proyectos reales. Incluye MCPs pre-configurados, skills especializadas, un subagente arquitecto de workflows, y templates listos para usar.
 
-Creado por [Carlos Domínguez](https://github.com/Carlos-Dominguez-faber) para la comunidad de [Imperio Digital](https://imperiodigital.club).
-
----
-
-## ¿Qué incluye?
-
-| Componente | Descripción |
-|---|---|
-| **`workshop/index.html`** | Workshop guide interactivo — material de la clase VibeCoding |
-| **`skills/n8n-coolify-fullstack/`** | Skill exclusiva: Coolify MCP + sticky notes + validación E2E + sub-workflows |
-| **`agents/workflow-architect/`** | Subagente que diseña planes completos de implementación |
-| **`templates/CLAUDE.md`** | Template tipo cuestionario para darle contexto a Claude |
-| **`templates/MEMORY.md`** | Sistema de autoaprendizaje — Claude lo actualiza solo |
-| **`templates/.mcp.json`** | MCP pre-configurado con placeholders (n8n + Coolify + Playwright) |
-| **`docs/mcp-vs-api.md`** | Comparativa completa: cuándo usar MCP vs API REST |
-| **`docs/setup-guide.md`** | Instalación paso a paso del stack completo |
-| **`workflows/dopla-base/`** | Workflows reales de Dopla SaaS como referencia de arquitectura |
+Creado por [Carlos Domínguez](https://github.com/Carlos-Dominguez-faber) — [Imperio Digital](https://imperiodigital.club) · VibeCoding
 
 ---
 
-## Inicio rápido (3 pasos)
+## Qué incluye
 
-### 1. Instalar el MCP de n8n
+```
+n8n-automation-kit/
+├── .mcp.json                        ← Template de MCPs (editar con tus credenciales)
+├── CLAUDE.md                        ← Cuestionario de contexto para Claude (rellenar)
+├── MEMORY.md                        ← Sistema de autoaprendizaje (Claude lo actualiza solo)
+├── skills/
+│   └── n8n-coolify-fullstack/       ← Skill exclusiva — instalar en ~/.claude/skills/
+├── agents/
+│   └── workflow-architect/          ← Subagente que diseña planes completos de workflows
+├── docs/
+│   ├── mcp-vs-api.md                ← Cuándo usar MCP vs API REST
+│   └── setup-guide.md               ← Guía de instalación detallada
+├── workflows/
+│   ├── README.md                    ← Instrucciones para poner tus workflows aquí
+│   └── starters/
+│       └── webhook-router-starter.json  ← Workflow base con sticky notes incluidas
+└── workshop/
+    └── index.html                   ← Workshop guide interactivo de la clase
+```
 
-Agrega esto a tu `.mcp.json` o `~/.claude/settings.json`:
+---
+
+## Inicio en 3 pasos
+
+### Paso 1 — Clonar y abrir en Claude Code
+
+```bash
+git clone https://github.com/Carlos-Dominguez-faber/n8n-automation-kit mi-proyecto-n8n
+cd mi-proyecto-n8n
+claude   # Abrir Claude Code desde aquí
+```
+
+> **Por qué trabajar desde este directorio:** Claude Code lee el `.mcp.json`, `CLAUDE.md` y `MEMORY.md` desde la raíz del proyecto. Al abrir Claude Code aquí, ya tiene todo el contexto configurado.
+
+### Paso 2 — Instalar la skill exclusiva
+
+```bash
+cp -r skills/n8n-coolify-fullstack ~/.claude/skills/
+```
+
+Reinicia Claude Code. La skill aparece disponible automáticamente.
+
+### Paso 3 — Configurar tus credenciales
+
+**3a. Editar `.mcp.json`** — reemplazar los placeholders con tus datos reales:
 
 ```json
 {
   "mcpServers": {
     "n8n-mcp": {
-      "command": "npx",
-      "args": ["-y", "n8n-mcp"],
       "env": {
-        "N8N_API_URL": "https://TU_N8N_URL/",
-        "N8N_API_KEY": "TU_API_KEY",
-        "MCP_MODE": "stdio",
-        "LOG_LEVEL": "error",
-        "DISABLE_CONSOLE_OUTPUT": "true"
+        "N8N_API_URL": "https://TU_N8N_URL/",   ← la / al final es obligatoria
+        "N8N_API_KEY": "TU_API_KEY"
       }
     }
   }
 }
 ```
 
-Verifica: `/mcp` en Claude Code → `n8n-mcp ✅ connected`
+Para obtener tu API key: **n8n → Settings → API → Enable API → Create API Key**
 
-### 2. Instalar la skill exclusiva
+**3b. Rellenar `CLAUDE.md`** — las secciones 1, 2 y 3 son las más importantes:
+- Sección 1: tu URL de n8n, si usas Coolify, microservicios activos
+- Sección 2: nombre del proyecto, proceso que automatizas, reglas de negocio
+- Sección 3: credenciales disponibles en n8n (nombres exactos), nodos que más usas
 
-```bash
-git clone https://github.com/getforja/n8n-automation-kit
-cp -r n8n-automation-kit/skills/n8n-coolify-fullstack ~/.claude/skills/
-```
-
-### 3. Configurar tu proyecto
+**3c. Configurar Playwright con tu perfil de Chrome** (para validación E2E con sesión activa):
 
 ```bash
-cp n8n-automation-kit/templates/CLAUDE.md ./CLAUDE.md
-cp n8n-automation-kit/templates/MEMORY.md ./MEMORY.md
-# Edita CLAUDE.md y rellena las secciones 1-3 (REQUERIDO)
+# Encontrar tu perfil de Chrome
+ls ~/Library/Application\ Support/Google/Chrome/ | grep -i profile
+# Output ejemplo: Profile 2
+
+# En .mcp.json → reemplazar en la sección "playwright":
+# --user-data-dir=/Users/TU_USUARIO/Library/Application Support/Google/Chrome/Profile 2
 ```
 
----
-
-## Skills disponibles en este kit
-
-| Skill | Qué hace | Cuándo activa Claude la skill |
-|---|---|---|
-| `n8n-workflow-patterns` | 5 patrones arquitecturales probados | Al diseñar un workflow nuevo |
-| `n8n-mcp-tools-expert` | Guía de herramientas MCP | Al usar cualquier tool MCP de n8n |
-| `n8n-node-configuration` | Config por tipo de nodo | Al configurar un nodo específico |
-| `n8n-code-javascript` | JS en Code nodes (sintaxis $input) | Al escribir código en n8n |
-| `n8n-expression-syntax` | Expresiones {{ }} seguras | Al escribir expresiones |
-| `n8n-validation-expert` | Interpreta errores de validación | Al haber errores de validación |
-| `n8n-coolify-fullstack` | **Skill exclusiva** — Coolify + sticky notes + E2E + subs + microservicios | Al trabajar con el stack completo |
-
-> Las skills 1-6 se instalan vía el marketplace de Claude Code.
-> La skill `n8n-coolify-fullstack` se instala desde este repo (paso 2 arriba).
+> Antes de usar Playwright: crea un perfil Chrome dedicado, inicia sesión en tu n8n y Coolify en ese perfil, y usa esa ruta en el .mcp.json. Así Playwright ya tiene sesión activa cada vez que lo usa Claude.
 
 ---
 
-## MCPs incluidos en el template
+## Verificar que todo funciona
 
-| MCP | Paquete | Para qué |
-|---|---|---|
-| **n8n MCP** | `n8n-mcp` | Crear, editar y validar workflows |
-| **Coolify MCP** | `@masonator/coolify-mcp` | Gestionar microservicios en Coolify |
-| **Playwright MCP** | `@playwright/mcp@latest` | Validación E2E visual con sesión Chrome |
+Escribe esto en Claude Code después de configurar:
 
----
+```
+/mcp
+```
+→ Debe aparecer **n8n-mcp ✅ connected**
 
-## Caso de estudio: Dopla SaaS
-
-Los workflows en `workflows/dopla-base/` son adaptaciones sanitizadas del sistema real de [Dopla](https://dopla.app) — un SaaS multi-tenant de generación de contenido con IA.
-
-**Arquitectura:** Webhook → Router → 4 sub-workflows por tipo de contenido (carrusel, post estático, reel, reel UGC)
-
-Úsalos como referencia de:
-- Patrón Router → Sub-workflows
-- Multi-tenancy con `tenant_id` en cada nodo
-- Respuesta async (respondToWebhook inmediato + callback)
-- Sticky notes en las 4 zonas obligatorias
+Luego prueba:
+```
+"lista mis workflows activos en n8n"
+```
+→ Claude debe devolver tus workflows reales via MCP.
 
 ---
 
-## Prerrequisitos
+## Las 6 skills de n8n
 
-- n8n self-hosted (Coolify, Docker, o local)
-- Claude Code instalado
-- Node.js 18+ (para npx)
-- Chrome (para Playwright con sesión persistente)
+Claude las activa automáticamente — no necesitas invocarlas.
 
-Ver [docs/setup-guide.md](docs/setup-guide.md) para instalación detallada.
+| Skill | Se activa cuando... |
+|---|---|
+| `n8n-workflow-patterns` | Diseñas un workflow nuevo o eliges arquitectura |
+| `n8n-mcp-tools-expert` | Usas cualquier herramienta MCP de n8n |
+| `n8n-node-configuration` | Configuras un nodo específico |
+| `n8n-code-javascript` | Escribes código JS en un Code node |
+| `n8n-expression-syntax` | Escribes expresiones `{{ }}` o hay un undefined |
+| `n8n-validation-expert` | Hay errores de validación que interpretar |
+
+Estas 6 skills se instalan desde el marketplace de Claude Code. La skill **`n8n-coolify-fullstack`** (la exclusiva de este kit) la instalaste en el Paso 2.
 
 ---
 
-## Contribuir
+## La skill exclusiva: n8n-coolify-fullstack
 
-PRs bienvenidos para:
-- Nuevos workflows starter en `workflows/starters/`
-- Mejoras a la skill `n8n-coolify-fullstack`
-- Nuevas entradas en el `node-catalog.md`
-- Traducciones de la documentación
+Combina 5 módulos que trabajan juntos en proyectos de producción:
+
+| Módulo | Qué hace |
+|---|---|
+| `coolify-microservices.md` | Gestiona microservicios en Coolify MCP desde Claude: list, get, restart, logs |
+| `sticky-notes-patterns.md` | 4 zonas de documentación obligatorias con posiciones y colores estándar |
+| `dual-layer-validation.md` | Validación en dos capas: MCP (estructura) + Playwright E2E (visual con sesión) |
+| `sub-workflow-patterns.md` | Cuándo crear sub-workflows, cómo pasar datos, el gotcha del `type: "string"` |
+| `microservice-integration.md` | Integrar microservicios Docker con n8n: patrones síncrono, callback, polling |
+
+---
+
+## El subagente workflow-architect
+
+Diseña planes completos de implementación en lenguaje natural:
+
+```
+"actúa como workflow-architect y diseña el plan para:
+ recibir un formulario de contacto por webhook, calificar el lead
+ con un Code node, guardar en Google Sheets, y enviar email con
+ o sin botón de agenda según la calificación"
+```
+
+El subagente produce:
+- Diagrama ASCII del flujo
+- Tabla de nodos con configuración clave
+- Posiciones y contenido de sticky notes por zona
+- Secuencia de construcción paso a paso
+- Credenciales requeridas y riesgos
+
+---
+
+## MCP vs API REST — cuándo usar cada uno
+
+Ver [docs/mcp-vs-api.md](docs/mcp-vs-api.md) para la comparativa completa.
+
+**Resumen:**
+- **MCP**: para construir, editar y validar workflows. Claude entiende n8n semánticamente.
+- **API REST directa**: para operar y monitorear. Scripts, CI/CD, ejecuciones en tiempo real.
+- **Los dos viven en el mismo `.mcp.json`** — no son excluyentes.
+
+---
+
+## Tus workflows
+
+La carpeta `workflows/` está vacía intencionalmente. Pon ahí tus propios workflows:
+
+```bash
+# Exportar desde n8n: ⋮ → Download → guardar el .json aquí
+workflows/mi-workflow.json
+workflows/sub-mi-proceso.json
+```
+
+Hay un workflow base en `workflows/starters/webhook-router-starter.json` — un dispatcher con sticky notes en las 4 zonas obligatorias, listo para adaptar.
+
+---
+
+## CLAUDE.md y MEMORY.md
+
+**`CLAUDE.md`** — Lo rellenas tú una vez. Claude lo lee al inicio de cada sesión y sabe exactamente qué instancia de n8n usas, qué credenciales están disponibles, y qué convenciones seguir. Sin él, Claude empieza sin contexto cada vez.
+
+**`MEMORY.md`** — Lo actualiza Claude solo. Cada vez que encuentra y resuelve un error, descubre un gotcha, o valida un patrón que funciona, agrega una entrada. Con el tiempo acumula el conocimiento específico de tu proyecto.
+
+---
+
+## Coolify MCP (opcional)
+
+Si usas Coolify para alojar n8n y tus microservicios, agrega el MCP de Coolify en `.mcp.json`:
+
+```json
+"coolify": {
+  "command": "npx",
+  "args": ["-y", "@masonator/coolify-mcp"],
+  "env": {
+    "COOLIFY_ACCESS_TOKEN": "TU_TOKEN",
+    "COOLIFY_BASE_URL": "https://coolify.tudominio.com/"
+  }
+}
+```
+
+Token en: **Coolify → Profile → API Tokens → Create**
+
+Con Coolify MCP puedes pedirle a Claude cosas como:
+- `"verifica que todos mis microservicios están corriendo"`
+- `"reinicia el servicio X"`
+- `"muéstrame los últimos logs del servicio Y"`
+
+---
+
+## Requisitos
+
+- **n8n self-hosted** corriendo y accesible (Coolify, Docker, o local)
+- **Claude Code** instalado: `npm install -g @anthropic-ai/claude-code`
+- **Node.js 18+** (para npx)
+- **Chrome** instalado (para Playwright con sesión persistente)
+
+Ver [docs/setup-guide.md](docs/setup-guide.md) para instalación paso a paso.
 
 ---
 
@@ -133,4 +231,4 @@ MIT — Úsalo, modifícalo, compártelo.
 
 ---
 
-*Hecho con Claude Code + La Forja v3.2.0 — Imperio Digital 2026*
+*Creado con Claude Code + [La Forja v3.2.0](https://github.com/Carlos-Dominguez-faber/forge) · Imperio Digital 2026*

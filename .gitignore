@@ -1,28 +1,28 @@
-# Environment variables — NUNCA subir al repo
+# Credenciales — NUNCA subir
 .env
 .env.local
-.env.production
 .env.*
-
-# MCP con credenciales reales — usar templates/.mcp.json como referencia
-.mcp.json
-
-# API keys y tokens específicos
 *api-key*
 *api_key*
-*secret*
 *.credentials
+
+# MCP con credenciales reales — el .mcp.json del repo es el template
+# Descomenta si quieres tener un .mcp.json local con tus credenciales
+# y no quieres que se suba:
+# .mcp.json
+
+# Workflows personales — no se comparten (tienen IDs de credenciales específicos)
+workflows/*.json
+!workflows/starters/*.json
 
 # macOS
 .DS_Store
-.AppleDouble
-.LSOverride
 
 # Node
 node_modules/
 npm-debug.log*
 
-# Claude Code — cache local
+# Claude Code — cache local (no relevante para el repo)
 .claude/cache/
 .claude/history.jsonl
 .claude/sessions/
@@ -30,12 +30,8 @@ npm-debug.log*
 # Playwright artifacts
 test-results/
 playwright-report/
-screenshots/
+screenshots/*.png
 
-# Logs
+# Logs y temporales
 *.log
-logs/
-
-# Temporales
 *.tmp
-*.temp
