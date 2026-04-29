@@ -1,0 +1,537 @@
+{
+  "name": "MBM - Generacion de Contenido con IA - ROUTER — Dopla",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-tiene-tipo",
+              "leftValue": "={{ $json.tipo_a_crear }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty",
+                "name": "filter.operator.isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-880, 304],
+      "id": "e15d2f08-834e-401b-837d-1f7d3cca3fcc",
+      "name": "4. ¿Tiene tipo seleccionado?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 208],
+      "id": "76c09dda-7789-43af-991b-bfd3a1b0d44a",
+      "name": "5. IA: hook + caption + prompt",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_OPENROUTER_CRED_ID",
+          "name": "YOUR_OPENROUTER_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiRaw = $input.first().json;\nconst original = $('4e. Componer datos').first().json;\n\nlet mi_hook = '';\nlet mi_caption = '';\nlet prompt_gen = '';\n\ntry {\n  const content = aiRaw.choices?.[0]?.message?.content || '';\n  const parsed = JSON.parse(content);\n  mi_hook = parsed.mi_hook || '';\n  mi_caption = parsed.mi_caption || '';\n  prompt_gen = parsed.prompt_generacion || '';\n} catch (e) {\n  mi_hook = 'Error al generar';\n  mi_caption = aiRaw.choices?.[0]?.message?.content || '';\n  prompt_gen = '';\n}\n\nreturn [{\n  json: {\n    contentId: original.id,\n    tenantId: original.tenant_id,\n    tipo: original.tipo_a_crear,\n    num_slides: original.num_slides || 5,\n    mi_hook,\n    mi_caption,\n    prompt_gen,\n    hook_original: original.hook_original || '',\n    caption_original: original.original_caption || '',\n    transcripcion: original.transcription || '',\n    analisis: original.analysis || '',\n    brand: original.brand,\n    style_prompts: original.style_prompts,\n    avatar_id: original.avatar_id || null,\n    avatar_nombre: original.avatar_nombre || null,\n    brand_id: original.brand_id || null,\n    style_id: original.style_id || null,\n    avatar_uuid: original.avatar_uuid || null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [464, 208],
+      "id": "a982c593-8ad5-446e-a6f6-6f57a334422f",
+      "name": "6. Mapear datos"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/content?id=eq.{{ $json.contentId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ mi_hook: $json.mi_hook, mi_caption: $json.mi_caption, estado: 'generando', brand_id: $json.brand_id, style_id: $json.style_id, avatar_id: $json.avatar_uuid }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [688, 208],
+      "id": "a6e5b8b9-57ce-456d-a966-c2ea5f3c32a3",
+      "name": "7. Actualizar content en Supabase",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SUPABASE_CRED_ID",
+          "name": "YOUR_SUPABASE_CREDENTIAL_NAME"
+        }
+      },
+      "notes": "PATCH /rest/v1/content?id=eq.{uuid} — reemplaza update Airtable. Actualiza mi_hook, mi_caption, estado='generando', brand_id, style_id, avatar_id."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "is-carrusel",
+                    "leftValue": "={{ $json.tipo_a_crear }}",
+                    "rightValue": "Carrusel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Carrusel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "is-post",
+                    "leftValue": "={{ $json.tipo_a_crear }}",
+                    "rightValue": "Post estatico",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Post estatico"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "is-reel",
+                    "leftValue": "={{ $json.tipo_a_crear }}",
+                    "rightValue": "Reel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Reel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "is-ugc",
+                    "leftValue": "={{ $json.tipo_a_crear }}",
+                    "rightValue": "Reel UGC",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "options": {
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [1136, 176],
+      "id": "7e4b9530-7810-42b7-b1b6-213e860487ca",
+      "name": "8. Router por tipo",
+      "notes": "Switch por content.tipo_a_crear (columna Supabase). Mismo lógica, campo renombrado de Airtable."
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-656, 400],
+      "id": "6139c7f0-ff1c-4e77-a856-959c59a5827e",
+      "name": "Skip (sin tipo)"
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/content?id=eq.{{ $json.query.contentId }}&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-1104, 304],
+      "id": "fe4426d6-14b5-4dae-a9e3-3eb858420780",
+      "name": "3. Leer registro content",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SUPABASE_CRED_ID",
+          "name": "YOUR_SUPABASE_CREDENTIAL_NAME"
+        }
+      },
+      "notes": "GET /rest/v1/content?id=eq.{uuid} — reemplaza Airtable Get. Webhook ahora pasa contentId (UUID) en vez de recordId (recXXX)."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer primer item del array que devuelve Supabase REST\nconst items = $input.all();\nconst raw = items[0]?.json;\n// Supabase devuelve array, tomar primer elemento\nconst record = Array.isArray(raw) ? raw[0] : raw;\nreturn [{ json: record || {} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-928, 304],
+      "id": "dopla-extract-record",
+      "name": "3b. Extraer registro",
+      "notes": "Supabase REST devuelve array. Este nodo extrae el primer elemento para que los nodos siguientes lean $json.campo directamente."
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "o0k8GczzmRAN4XHp",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1360, -80],
+      "id": "108cd872-9b5b-4cd2-8375-197459b440ed",
+      "name": "Ejecutar: Carrusel"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sGUcF53rSWdkv1of",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1360, 112],
+      "id": "a2a21cd2-138b-469a-8902-a06ccc925ce3",
+      "name": "Ejecutar: Post Estatico"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "MVIwuJm3wqCqYZlN",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1360, 304],
+      "id": "702acb1f-9081-4197-94f4-ed254745b4ab",
+      "name": "Ejecutar: Reel"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html>\n<head><title>Accepted</title></head>\n<body>\n<script>window.addEventListener(\"load\", function() { window.close(); });</script>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [-1552, 304],
+      "id": "efa5a36b-b3d5-4ea1-8f0f-6e1ce1665f72",
+      "name": "2. Cerrar ventana"
+    },
+    {
+      "parameters": {
+        "path": "contenido",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1776, 304],
+      "id": "3790b52b-38f9-4e34-9876-95739bc0f023",
+      "name": "1. Webhook (boton Generar)",
+      "webhookId": "d6eaa887-092d-488f-99ec-3fdf437532ee",
+      "notes": "El webhook ahora recibe ?contentId={UUID} en vez de ?recordId=recXXX"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Vntw3gYeH3Krxv8M",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1360, 496],
+      "id": "f2-exec-ugc",
+      "name": "Ejecutar: Reel UGC"
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/brands?tenant_id=eq.{{ $json.tenant_id }}&is_default=eq.true&select=id,name,tone,audience,colors_jsonb&limit=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-656, 208],
+      "id": "4b-buscar-marca",
+      "name": "4b. Buscar Marca",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SUPABASE_CRED_ID",
+          "name": "YOUR_SUPABASE_CREDENTIAL_NAME"
+        }
+      },
+      "notes": "GET /rest/v1/brands?tenant_id=eq.{id}&is_default=eq.true — reemplaza Airtable Marcas."
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/styles?tenant_id=eq.{{ $('3b. Extraer registro').first().json.tenant_id }}&content_type=eq.{{ $('3b. Extraer registro').first().json.tipo_a_crear }}&is_default=eq.true&select=id,name,system_prompt,user_prompt,content_type&limit=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-432, 208],
+      "id": "4c-buscar-estilo",
+      "name": "4c. Buscar Estilo",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SUPABASE_CRED_ID",
+          "name": "YOUR_SUPABASE_CREDENTIAL_NAME"
+        }
+      },
+      "notes": "GET /rest/v1/styles?tenant_id=eq.{id}&content_type=eq.{tipo}&is_default=eq.true — reemplaza Airtable Estilos."
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/avatars?tenant_id=eq.{{ $('3b. Extraer registro').first().json.tenant_id }}&is_default=eq.true&select=id,name,heygen_avatar_id,heygen_voice_id&limit=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-208, 208],
+      "id": "4d-buscar-avatar",
+      "name": "4d. Buscar Avatar",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SUPABASE_CRED_ID",
+          "name": "YOUR_SUPABASE_CREDENTIAL_NAME"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "GET /rest/v1/avatars?tenant_id=eq.{id}&is_default=eq.true — reemplaza Airtable Avatares."
+    },
+    {
+      "parameters": {
+        "jsCode": "const record = $('3b. Extraer registro').first().json;\n\n// Extraer brand del array Supabase\nconst brandRaw = $('4b. Buscar Marca').first().json;\nconst marcaArr = Array.isArray(brandRaw) ? brandRaw : [brandRaw];\nconst marca = marcaArr[0] || {};\nconst brand_id = marca.id || null;\n\n// Extraer style del array Supabase\nconst styleRaw = $('4c. Buscar Estilo').first().json;\nconst styleArr = Array.isArray(styleRaw) ? styleRaw : [styleRaw];\nconst estilo = styleArr[0] || {};\nconst style_id = estilo.id || null;\n\n// Extraer avatar del array Supabase (solo para Reel UGC)\nconst avatarRaw = $('4d. Buscar Avatar').first().json;\nconst avatarArr = Array.isArray(avatarRaw) ? avatarRaw : [avatarRaw];\nconst avatar = avatarArr[0] || null;\nconst avatar_uuid = avatar?.id || null;\n\nconst tipo = record.tipo_a_crear || '';\n\nif (!marca.id) throw new Error('No se encontro marca default para este tenant');\nif (!estilo.id) throw new Error('No se encontro estilo para tipo \"' + tipo + '\"');\nif (tipo === 'Reel UGC' && !avatar) throw new Error('No se encontro avatar HeyGen para Reel UGC');\n\n// Parsear colors_jsonb si viene como string\nlet colores = '';\ntry { colores = typeof marca.colors_jsonb === 'string' ? marca.colors_jsonb : JSON.stringify(marca.colors_jsonb || {}); } catch (e) {}\n\nconst brand = {\n  nombre: marca.name || '',\n  handle_ig: marca.handle_ig || '',\n  tono: marca.tone || '',\n  audiencia: marca.audience || '',\n  colores,\n  estilo_visual: marca.visual_style || '',\n  reglas_lenguaje: marca.language_rules || '',\n  color_fondo_ugc: marca.ugc_bg_color || '#0D1B2A',\n  voz_elevenlabs: marca.elevenlabs_voice || 'Roger',\n  subtitulos: marca.subtitles_config || '',\n  logo_url: marca.logo_url || ''\n};\n\nconst style_prompts = {\n  prompt_sistema: estilo.system_prompt || '',\n  prompt_usuario: estilo.user_prompt || '',\n  nombre_estilo: estilo.name || '',\n  tipo_contenido: estilo.content_type || tipo\n};\n\nconst systemPrompt = 'Eres el estratega de contenido de ' + (brand.nombre || 'la marca') + '.\\n\\nBRAND VOICE:\\n- Tono: ' + (brand.tono || 'Profesional y directo') + '\\n- Audiencia: ' + (brand.audiencia || 'Profesionales') + '\\n- Colores: ' + (brand.colores || '') + '\\n\\nSIEMPRE responde en formato JSON valido con EXACTAMENTE los campos: mi_hook, mi_caption, prompt_generacion.';\n\nconst userPrompt = 'Basandote en este post de la competencia, genera contenido adaptado a la marca ' + (brand.nombre || '') + '.\\n\\nPOST DE REFERENCIA:\\nCuenta: ' + (record.source_account || 'N/A') + '\\nTipo original: ' + (record.source_type || 'N/A') + '\\nHook original: ' + (record.hook_original || 'N/A') + '\\nCaption original: ' + (record.original_caption || 'N/A') + '\\nAnalisis: ' + (record.analysis || 'N/A') + '\\nTranscripcion: ' + (record.transcription || 'N/A') + '\\n\\nTIPO A CREAR: ' + tipo + '\\n\\nGenera SOLO un JSON valido con EXACTAMENTE esta estructura:\\n{\\n  \"mi_hook\": \"Hook adaptado a la marca.\",\\n  \"mi_caption\": \"Caption completo para Instagram.\",\\n  \"prompt_generacion\": \"Direccion visual resumida en ingles.\"\\n}';\n\nconst requestBody = JSON.stringify({\n  model: 'openai/gpt-4.1-mini',\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: systemPrompt },\n    { role: 'user', content: userPrompt }\n  ]\n});\n\nreturn [{\n  json: {\n    ...record,\n    brand,\n    style_prompts,\n    avatar_id: avatar?.heygen_avatar_id || null,\n    avatar_nombre: avatar?.name || null,\n    brand_id,\n    style_id,\n    avatar_uuid,\n    requestBody\n  }\n}];"
+      },
+      "id": "4e-componer-datos",
+      "name": "4e. Componer datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [16, 208]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.query?.contentId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "id": "condition-check-uuid"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "guard-record-id",
+      "name": "¿ContentId válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1328, 304],
+      "notes": "Valida que el webhook reciba contentId (UUID). Antes validaba que empezara con 'rec'."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Hidrata datos enriquecidos para pasar a sub-workflows\nconst mapeado = $('6. Mapear datos').first().json;\nreturn [{ json: { ...mapeado } }];"
+      },
+      "id": "router-hydrate-datos",
+      "name": "7b. Hidratar datos enriquecidos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [912, 208]
+    },
+    {
+      "parameters": {
+        "content": "## ROUTER — Dopla\n\n### Cambios vs original (Airtable → Supabase)\n- Webhook: ?contentId={UUID} (antes ?recordId=recXXX)\n- Guard: valida UUID no-vacío (antes startsWith 'rec')\n- Nodo 3: GET /rest/v1/content?id=eq.{uuid}\n- Nodo 3b: extrae primer elem del array Supabase\n- Nodo 4b: GET /rest/v1/brands?is_default=eq.true\n- Nodo 4c: GET /rest/v1/styles?content_type=eq.{tipo}\n- Nodo 4d: GET /rest/v1/avatars?is_default=eq.true\n- Nodo 4e: mapea campos snake_case de Supabase\n- Nodo 7: PATCH /rest/v1/content actualiza estado\n- Switch: lee tipo_a_crear (no fields['Tipo de contenido a crear'])\n\n### Credencial\nHeader Auth 'Supabase Dopla' con headers apikey + Authorization.",
+        "height": 480,
+        "width": 420
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-2272, 32],
+      "id": "doc-main-orq",
+      "name": "Doc Router — Dopla"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "1. Webhook (boton Generar)": {
+      "main": [[{ "node": "2. Cerrar ventana", "type": "main", "index": 0 }]]
+    },
+    "3. Leer registro content": {
+      "main": [[{ "node": "3b. Extraer registro", "type": "main", "index": 0 }]]
+    },
+    "3b. Extraer registro": {
+      "main": [[{ "node": "4. ¿Tiene tipo seleccionado?", "type": "main", "index": 0 }]]
+    },
+    "4. ¿Tiene tipo seleccionado?": {
+      "main": [
+        [{ "node": "4b. Buscar Marca", "type": "main", "index": 0 }],
+        [{ "node": "Skip (sin tipo)", "type": "main", "index": 0 }]
+      ]
+    },
+    "5. IA: hook + caption + prompt": {
+      "main": [[{ "node": "6. Mapear datos", "type": "main", "index": 0 }]]
+    },
+    "6. Mapear datos": {
+      "main": [[{ "node": "7. Actualizar content en Supabase", "type": "main", "index": 0 }]]
+    },
+    "8. Router por tipo": {
+      "main": [
+        [{ "node": "Ejecutar: Carrusel", "type": "main", "index": 0 }],
+        [{ "node": "Ejecutar: Post Estatico", "type": "main", "index": 0 }],
+        [{ "node": "Ejecutar: Reel", "type": "main", "index": 0 }],
+        [{ "node": "Ejecutar: Reel UGC", "type": "main", "index": 0 }]
+      ]
+    },
+    "4b. Buscar Marca": {
+      "main": [[{ "node": "4c. Buscar Estilo", "type": "main", "index": 0 }]]
+    },
+    "4c. Buscar Estilo": {
+      "main": [[{ "node": "4d. Buscar Avatar", "type": "main", "index": 0 }]]
+    },
+    "4d. Buscar Avatar": {
+      "main": [[{ "node": "4e. Componer datos", "type": "main", "index": 0 }]]
+    },
+    "4e. Componer datos": {
+      "main": [[{ "node": "5. IA: hook + caption + prompt", "type": "main", "index": 0 }]]
+    },
+    "2. Cerrar ventana": {
+      "main": [[{ "node": "¿ContentId válido?", "type": "main", "index": 0 }]]
+    },
+    "¿ContentId válido?": {
+      "main": [[{ "node": "3. Leer registro content", "type": "main", "index": 0 }]]
+    },
+    "7. Actualizar content en Supabase": {
+      "main": [[{ "node": "7b. Hidratar datos enriquecidos", "type": "main", "index": 0 }]]
+    },
+    "7b. Hidratar datos enriquecidos": {
+      "main": [[{ "node": "8. Router por tipo", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "dopla-router-v1",
+  "meta": { "instanceId": "dopla" },
+  "id": "bZQqtSQLCYaqPC6O",
+  "tags": ["dopla"]
+}

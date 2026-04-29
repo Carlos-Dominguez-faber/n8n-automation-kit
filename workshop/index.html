@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>n8n + Claude Code — Workshop Interactivo · Imperio Digital</title>
+<style>
+:root {
+  --green: #10B981; --green-dark: #059669; --green-light: #34D399;
+  --purple: #7C3AED; --purple-dark: #5B21B6; --purple-light: #A78BFA;
+  --orange: #FF6D5A; --blue: #60A5FA; --yellow: #FBBF24;
+  --bg: #0A0A0F; --bg2: #111118; --bg3: #1a1a28;
+  --surface: #1E1E2E; --surface2: #252535; --border: #2E2E45;
+  --text: #E2E8F0; --muted: #94A3B8; --dim: #64748B;
+  --code-bg: #0D1117; --font-mono: 'JetBrains Mono','Fira Code','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;display:flex;min-height:100vh;overflow-x:hidden}
+
+/* SIDEBAR */
+.sidebar{width:260px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;flex-shrink:0;z-index:100}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--border)}
+.sidebar-header{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.logo-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+.logo-n8n{background:linear-gradient(135deg,#FF6D5A,#ea4b4b)}
+.logo-cc{background:linear-gradient(135deg,var(--purple),var(--purple-dark))}
+.sidebar-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.sidebar-sub{font-size:11px;color:var(--dim);margin-top:2px}
+.sidebar-nav{padding:12px 0}
+.nav-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:12px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;transition:all 0.15s;color:var(--muted);font-size:13px;border-left:2px solid transparent;text-decoration:none}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(16,185,129,0.08);color:var(--green);border-left-color:var(--green)}
+.nav-item .num{font-size:10px;font-family:var(--font-mono);min-width:18px;color:var(--dim)}
+.nav-item.active .num{color:var(--green)}
+.time-badge{margin-left:auto;font-size:10px;font-family:var(--font-mono);color:var(--dim);white-space:nowrap}
+
+/* MAIN */
+.main{margin-left:260px;flex:1;min-width:0}
+.topbar{position:sticky;top:0;background:rgba(10,10,15,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 48px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.section-breadcrumb{font-size:13px;color:var(--muted)}
+.section-breadcrumb span{color:var(--text);font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.kbd{padding:3px 7px;border:1px solid var(--border);border-radius:4px;background:var(--surface);font-family:var(--font-mono);font-size:11px;color:var(--dim)}
+.live-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:100px;font-size:12px;font-weight:600;color:#EF4444}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#EF4444;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* CONTENT */
+.content{padding:48px;max-width:900px}
+
+/* SECTIONS */
+.section{display:none;animation:fadeIn 0.3s ease}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* HERO */
+.hero{margin-bottom:48px}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;padding:5px 12px;border:1px solid rgba(16,185,129,0.3);border-radius:100px;background:rgba(16,185,129,0.08)}
+.hero-title{font-size:48px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
+.hero-title .g{background:linear-gradient(135deg,var(--green-light),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-title .p{background:linear-gradient(135deg,var(--purple-light),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:17px;color:var(--muted);line-height:1.7;max-width:620px}
+.hero-meta{display:flex;gap:24px;margin-top:24px;flex-wrap:wrap}
+.hero-meta-item{display:flex;flex-direction:column;gap:2px}
+.hml{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim)}
+.hmv{font-size:14px;font-weight:600}
+
+/* SECTION HEADER */
+.sh{margin-bottom:32px}
+.sh-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sh-tag::before{content:'';width:20px;height:2px;background:var(--green);border-radius:1px}
+.sh-tag.purple{color:var(--purple-light)}
+.sh-tag.purple::before{background:var(--purple)}
+.sh-title{font-size:32px;font-weight:800;letter-spacing:-0.8px;line-height:1.2}
+.sh-sub{font-size:15px;color:var(--muted);margin-top:8px;line-height:1.6}
+.divider{width:40px;height:3px;background:linear-gradient(90deg,var(--green),var(--purple));border-radius:2px;margin:16px 0}
+
+/* CODE */
+.code-wrap{position:relative;margin:16px 0}
+.code-label{position:absolute;top:12px;right:14px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);font-family:var(--font-mono)}
+.copy-btn{position:absolute;top:10px;right:70px;padding:3px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--muted);cursor:pointer;transition:all 0.2s;font-family:var(--font-mono)}
+.copy-btn:hover{background:var(--surface);color:var(--text)}
+.copy-btn.copied{color:var(--green);border-color:rgba(16,185,129,0.4)}
+pre.code{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;padding:24px 28px;font-family:var(--font-mono);font-size:13px;line-height:1.7;overflow-x:auto;white-space:pre}
+.t-c{color:#6E7C8C;font-style:italic}.t-k{color:var(--purple-light)}.t-s{color:var(--green-light)}.t-v{color:var(--blue)}.t-n{color:var(--orange)}.t-op{color:#F472B6}.t-b{color:var(--yellow)}
+
+/* CARDS */
+.cards-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.cards-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:20px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+.card.green{border-color:rgba(16,185,129,0.3)}
+.card.purple{border-color:rgba(124,58,237,0.3)}
+.card.orange{border-color:rgba(255,109,90,0.3)}
+.card.blue{border-color:rgba(96,165,250,0.3)}
+.card-icon{font-size:22px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.card-desc{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* TABLE */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:16px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:10px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);border-bottom:1px solid var(--border);text-align:left}
+tbody td{padding:12px 16px;border-bottom:1px solid rgba(46,46,69,0.4);color:var(--muted);vertical-align:top}
+tbody td:first-child{color:var(--text);font-weight:500}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,0.02)}
+
+/* CALLOUTS */
+.callout{display:flex;gap:14px;padding:16px 18px;border-radius:12px;border-left:3px solid;margin:16px 0}
+.callout.tip{background:rgba(16,185,129,0.06);border-color:var(--green)}
+.callout.warn{background:rgba(251,191,36,0.06);border-color:var(--yellow)}
+.callout.info{background:rgba(96,165,250,0.06);border-color:var(--blue)}
+.callout.danger{background:rgba(239,68,68,0.06);border-color:#EF4444}
+.ci{font-size:16px;flex-shrink:0}
+.cb{flex:1}
+.ct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.callout.tip .ct{color:var(--green)}.callout.warn .ct{color:var(--yellow)}.callout.info .ct{color:var(--blue)}.callout.danger .ct{color:#EF4444}
+.cd{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* EXERCISE */
+.exercise{background:rgba(124,58,237,0.05);border:1px solid rgba(124,58,237,0.2);border-radius:14px;padding:24px;margin:24px 0}
+.ex-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.ex-badge{padding:4px 12px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--purple-light)}
+.ex-title{font-size:16px;font-weight:700}
+.ex-steps{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.ex-step{display:flex;gap:12px;align-items:flex-start}
+.step-n{width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,var(--purple),var(--purple-dark));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.step-b{flex:1}
+.step-t{font-size:13px;font-weight:700;margin-bottom:2px}
+.step-d{font-size:12px;color:var(--muted);line-height:1.4}
+
+/* FLOW */
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:16px 0}
+.fn{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;white-space:nowrap}
+.fn.green{border-color:rgba(16,185,129,0.4);background:rgba(16,185,129,0.08);color:var(--green-light)}
+.fn.purple{border-color:rgba(124,58,237,0.4);background:rgba(124,58,237,0.08);color:var(--purple-light)}
+.fn.orange{border-color:rgba(255,109,90,0.4);background:rgba(255,109,90,0.08);color:var(--orange)}
+.fn.blue{border-color:rgba(96,165,250,0.4);background:rgba(96,165,250,0.08);color:var(--blue)}
+.fa{color:var(--dim);font-size:16px;padding:0 8px;flex-shrink:0}
+
+/* LIST */
+.check-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin:14px 0}
+.check-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5}
+.ci-g{width:20px;height:20px;border-radius:5px;background:rgba(16,185,129,0.15);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.ci-p{width:20px;height:20px;border-radius:5px;background:rgba(124,58,237,0.15);color:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+
+/* HIGHLIGHT BOX */
+.hbox{border-radius:12px;padding:16px 20px;margin:16px 0}
+.hbox.green{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2)}
+.hbox.purple{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2)}
+.hbox.orange{background:rgba(255,109,90,0.07);border:1px solid rgba(255,109,90,0.2)}
+.hbox-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.hbox.green .hbox-title{color:var(--green)}.hbox.purple .hbox-title{color:var(--purple-light)}.hbox.orange .hbox-title{color:var(--orange)}
+.hbox-body{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.25)}
+.badge.purple{background:rgba(124,58,237,0.12);color:var(--purple-light);border:1px solid rgba(124,58,237,0.25)}
+.badge.orange{background:rgba(255,109,90,0.12);color:var(--orange);border:1px solid rgba(255,109,90,0.25)}
+.badge.blue{background:rgba(96,165,250,0.12);color:var(--blue);border:1px solid rgba(96,165,250,0.25)}
+
+/* CHALLENGE */
+.challenge-box{background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(124,58,237,0.08));border:1px solid rgba(16,185,129,0.2);border-radius:20px;padding:40px;margin:32px 0;text-align:center}
+.challenge-title{font-size:36px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--green-light),var(--purple-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
+.challenge-sub{font-size:16px;color:var(--muted);margin-bottom:32px}
+.challenge-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;text-align:left}
+.cs{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.cs-n{font-size:24px;font-weight:900;color:var(--green);opacity:0.5;line-height:1;margin-bottom:8px}
+.cs-t{font-size:13px;font-weight:700;margin-bottom:4px}
+.cs-d{font-size:12px;color:var(--muted);line-height:1.4}
+
+/* SKILL BLOCK */
+.skill-row{display:flex;gap:12px;align-items:flex-start;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin:8px 0;cursor:pointer;transition:all 0.2s}
+.skill-row:hover{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04)}
+.skill-icon{width:36px;height:36px;border-radius:8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.skill-info{flex:1}
+.skill-name{font-size:13px;font-weight:700;color:var(--green);font-family:var(--font-mono);margin-bottom:3px}
+.skill-desc{font-size:12px;color:var(--muted);line-height:1.4}
+.skill-when{font-size:11px;color:var(--dim);margin-top:4px}
+.skill-when span{color:var(--text)}
+
+/* CHROME SESSION BLOCK */
+.session-modes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.session-mode{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.session-mode.recommended{border-color:rgba(16,185,129,0.3)}
+.sm-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.sm-badge{padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.sm-badge.rec{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3)}
+.sm-badge.alt{background:rgba(96,165,250,0.15);color:var(--blue);border:1px solid rgba(96,165,250,0.3)}
+.sm-title{font-size:14px;font-weight:700}
+.sm-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* RESPONSIVE */
+@media(max-width:1100px){.cards-2{grid-template-columns:1fr}.cards-3{grid-template-columns:1fr 1fr}.challenge-steps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.content{padding:24px}.hero-title{font-size:32px}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <div class="logo-badge logo-n8n">n8</div>
+      <div style="font-size:12px;color:var(--dim)">+</div>
+      <div class="logo-badge logo-cc">CC</div>
+    </div>
+    <div class="sidebar-title">n8n Automation Kit</div>
+    <div class="sidebar-sub">VibeCoding · Imperio Digital</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Workshop</div>
+    <a class="nav-item active" onclick="showSection(0,this)">
+      <span class="num">00</span>Intro & Setup
+      <span class="time-badge">00-10</span>
+    </a>
+    <a class="nav-item" onclick="showSection(1,this)">
+      <span class="num">01</span>MCP vs API
+      <span class="time-badge">10-25</span>
+    </a>
+    <a class="nav-item" onclick="showSection(2,this)">
+      <span class="num">02</span>Las 6 Skills
+      <span class="time-badge">25-40</span>
+    </a>
+    <a class="nav-item" onclick="showSection(3,this)">
+      <span class="num">03</span>CLAUDE.md + MEMORY
+      <span class="time-badge">40-52</span>
+    </a>
+    <a class="nav-item" onclick="showSection(4,this)">
+      <span class="num">04</span>Sub-workflows (Dopla)
+      <span class="time-badge">52-65</span>
+    </a>
+    <a class="nav-item" onclick="showSection(5,this)">
+      <span class="num">05</span>Skill Exclusiva
+      <span class="time-badge">65-75</span>
+    </a>
+    <a class="nav-item" onclick="showSection(6,this)">
+      <span class="num">06</span>Chrome + Playwright E2E
+      <span class="time-badge">75-85</span>
+    </a>
+    <a class="nav-item" onclick="showSection(7,this)">
+      <span class="num">07</span>Reto Comunidad
+      <span class="time-badge">85-90</span>
+    </a>
+    <div class="nav-section-label" style="margin-top:8px">Recursos</div>
+    <a class="nav-item" href="../docs/mcp-vs-api.md" target="_blank">
+      <span class="num">📄</span>docs/mcp-vs-api.md
+    </a>
+    <a class="nav-item" href="../templates/CLAUDE.md" target="_blank">
+      <span class="num">📄</span>templates/CLAUDE.md
+    </a>
+    <a class="nav-item" href="../templates/MEMORY.md" target="_blank">
+      <span class="num">📄</span>templates/MEMORY.md
+    </a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="live-badge"><div class="live-dot"></div>En Vivo</div>
+      <div class="section-breadcrumb">n8n + Claude Code → <span id="current-section-name">Intro & Setup</span></div>
+    </div>
+    <div class="topbar-right">
+      <span class="kbd">←</span><span class="kbd">→</span>
+      <span style="font-size:11px;color:var(--dim);margin-left:4px">navegar</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 0: INTRO & SETUP               -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section active" id="sec-0">
+      <div class="hero">
+        <div class="hero-eyebrow">🔴 VibeCoding · Imperio Digital · Clase en vivo</div>
+        <div class="hero-title">
+          <span class="g">N8N</span> + <span class="p">Claude Code</span><br>
+          Automatizaciones Reales
+        </div>
+        <div class="hero-desc">
+          Workshop hands-on. Vamos a conectar Claude Code con n8n usando MCP, construir sub-workflows determinísticos basados en el patrón real de Dopla, y validar todo con Playwright E2E.
+        </div>
+        <div class="hero-meta">
+          <div class="hero-meta-item"><div class="hml">Formato</div><div class="hmv">Workshop Q&A</div></div>
+          <div class="hero-meta-item"><div class="hml">Duración</div><div class="hmv">90 minutos</div></div>
+          <div class="hero-meta-item"><div class="hml">Enfoque</div><div class="hmv">Determinístico (no agentes)</div></div>
+          <div class="hero-meta-item"><div class="hml">Nivel</div><div class="hmv">Intermedio</div></div>
+        </div>
+      </div>
+
+      <div class="sh">
+        <div class="sh-tag">⚡ Setup en 5 minutos</div>
+        <div class="sh-title">Lo que necesitas para la clase</div>
+        <div class="divider"></div>
+      </div>
+
+      <div class="cards-2">
+        <div class="card green">
+          <div class="card-icon">🔴</div>
+          <div class="card-title">n8n self-hosted corriendo</div>
+          <div class="card-desc">Con la API habilitada. Ve a Settings → API → Enable API → copia tu API key. <br><br><strong>Mi instancia:</strong> <code style="color:var(--green-light);font-family:var(--font-mono);font-size:12px">pod-1.dopla.app</code></div>
+        </div>
+        <div class="card purple">
+          <div class="card-icon">🤖</div>
+          <div class="card-title">Claude Code instalado</div>
+          <div class="card-desc">Con el MCP de n8n configurado en tu <code style="color:var(--purple-light);font-family:var(--font-mono);font-size:12px">.mcp.json</code> o <code style="color:var(--purple-light);font-family:var(--font-mono);font-size:12px">settings.json</code>. Verifica con <code style="color:var(--purple-light);font-family:var(--font-mono);font-size:12px">/mcp</code> → n8n ✅</div>
+        </div>
+      </div>
+
+      <div class="sh-tag" style="margin-top:32px">Configuración del MCP</div>
+      <div class="code-wrap">
+        <div class="code-label">.mcp.json</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c">// Configuración mínima — n8n MCP + Coolify + Playwright</span>
+{
+  <span class="t-k">"mcpServers"</span>: {
+    <span class="t-k">"n8n-mcp"</span>: {
+      <span class="t-k">"command"</span>: <span class="t-s">"npx"</span>,
+      <span class="t-k">"args"</span>: [<span class="t-s">"-y"</span>, <span class="t-s">"n8n-mcp"</span>],
+      <span class="t-k">"env"</span>: {
+        <span class="t-k">"N8N_API_URL"</span>: <span class="t-s">"https://TU_N8N_URL/"</span>,
+        <span class="t-k">"N8N_API_KEY"</span>: <span class="t-s">"TU_API_KEY"</span>,
+        <span class="t-k">"MCP_MODE"</span>: <span class="t-s">"stdio"</span>,
+        <span class="t-k">"LOG_LEVEL"</span>: <span class="t-s">"error"</span>,
+        <span class="t-k">"DISABLE_CONSOLE_OUTPUT"</span>: <span class="t-s">"true"</span>
+      }
+    },
+    <span class="t-k">"coolify"</span>: {
+      <span class="t-k">"command"</span>: <span class="t-s">"npx"</span>,
+      <span class="t-k">"args"</span>: [<span class="t-s">"-y"</span>, <span class="t-s">"@masonator/coolify-mcp"</span>],
+      <span class="t-k">"env"</span>: {
+        <span class="t-k">"COOLIFY_ACCESS_TOKEN"</span>: <span class="t-s">"TU_COOLIFY_TOKEN"</span>,
+        <span class="t-k">"COOLIFY_BASE_URL"</span>: <span class="t-s">"https://coolify.tudominio.com/"</span>
+      }
+    },
+    <span class="t-k">"playwright"</span>: {
+      <span class="t-k">"command"</span>: <span class="t-s">"npx"</span>,
+      <span class="t-k">"args"</span>: [
+        <span class="t-s">"@playwright/mcp@latest"</span>,
+        <span class="t-s">"--browser=chrome"</span>,
+        <span class="t-s">"--user-data-dir=TU_CHROME_PROFILE_PATH"</span>
+      ]
+    }
+  }
+}</pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="ci">✅</div>
+        <div class="cb"><div class="ct">Verificar conexión</div>
+        <div class="cd">En Claude Code: escribe <code style="color:var(--green-light);font-family:var(--font-mono)">/mcp</code> → debe aparecer <strong>n8n-mcp ✅ connected</strong>. Si no: verifica que n8n tenga la API habilitada y la URL termine en <code style="color:var(--green-light);font-family:var(--font-mono)">/</code></div></div>
+      </div>
+    </div><!-- /sec-0 -->
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 1: MCP VS API                  -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section" id="sec-1">
+      <div class="sh">
+        <div class="sh-tag">01 · Conexión</div>
+        <div class="sh-title">MCP vs API REST — Dos métodos, dos casos de uso</div>
+        <div class="divider"></div>
+        <div class="sh-sub">No es uno u otro — son complementarios. Aprende cuándo usar cada uno.</div>
+      </div>
+
+      <div class="cards-2" style="margin-bottom:24px">
+        <div class="card purple">
+          <div class="card-icon">🧠</div>
+          <div class="card-title" style="color:var(--purple-light)">MCP n8n-mcp</div>
+          <div class="card-desc">Claude "entiende" n8n. Sabe qué es un nodo, cómo se conectan, qué significa validar. Actúa como un experto en n8n integrado en Claude.<br><br>
+          <span class="badge green">✓ Validación semántica</span>&nbsp;
+          <span class="badge green">✓ Busca nodos</span>&nbsp;
+          <span class="badge green">✓ 2700+ templates</span>
+          </div>
+        </div>
+        <div class="card blue">
+          <div class="card-icon">🌐</div>
+          <div class="card-title" style="color:var(--blue)">API REST directa</div>
+          <div class="card-desc">Claude hace HTTP requests directos. Más rápido, más flexible. Ideal para leer datos de ejecuciones, disparar workflows desde otro sistema, o como fallback del MCP.<br><br>
+          <span class="badge blue">✓ Velocidad</span>&nbsp;
+          <span class="badge blue">✓ Sin proceso intermedio</span>&nbsp;
+          <span class="badge blue">✓ CI/CD</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Capacidad</th><th>MCP n8n-mcp</th><th>API REST directa</th></tr></thead>
+          <tbody>
+            <tr><td>Buscar nodos por keyword</td><td><span class="badge green">✅ search_nodes</span></td><td><span class="badge orange">❌ No disponible</span></td></tr>
+            <tr><td>Crear workflows</td><td><span class="badge green">✅ n8n_create_workflow</span></td><td><span class="badge blue">⚠️ POST raw JSON</span></td></tr>
+            <tr><td>Validar configuración</td><td><span class="badge green">✅ validate_node/workflow</span></td><td><span class="badge orange">❌ No disponible</span></td></tr>
+            <tr><td>Templates (2700+)</td><td><span class="badge green">✅ search + deploy</span></td><td><span class="badge orange">❌ No disponible</span></td></tr>
+            <tr><td>Ver ejecuciones</td><td><span class="badge green">✅ n8n_executions</span></td><td><span class="badge green">✅ GET /api/v1/executions</span></td></tr>
+            <tr><td>Gestionar credenciales</td><td><span class="badge orange">❌ No gestiona</span></td><td><span class="badge green">✅ GET /api/v1/credentials</span></td></tr>
+            <tr><td>Velocidad de respuesta</td><td>~100-500ms (proceso intermedio)</td><td>~20-50ms (directo)</td></tr>
+            <tr><td>Conocimiento previo necesario</td><td><span class="badge green">Bajo — MCP guía</span></td><td><span class="badge orange">Alto — necesitas saber la API</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sh-tag" style="margin-top:28px">Demo en vivo — Método MCP</div>
+      <div class="code-wrap">
+        <div class="code-label">Claude Code chat</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c"># Pegar esto exactamente en Claude Code:</span>
+
+<span class="t-s">"Lista mis workflows activos en n8n y dime cuántos hay"</span>
+
+<span class="t-c"># Claude va a invocar internamente:</span>
+<span class="t-v">n8n_list_workflows</span>() → devuelve todos los workflows
+<span class="t-c"># Y también puede validar uno:</span>
+<span class="t-s">"Valida el workflow 'Router Dopla' con perfil runtime"</span></pre>
+      </div>
+
+      <div class="sh-tag" style="margin-top:20px">Demo en vivo — Método API REST</div>
+      <div class="code-wrap">
+        <div class="code-label">bash</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c"># Listar workflows</span>
+<span class="t-v">curl</span> -s <span class="t-s">"https://pod-1.dopla.app/api/v1/workflows"</span> \
+  -H <span class="t-s">"X-N8N-API-KEY: TU_API_KEY"</span> | <span class="t-v">jq</span> <span class="t-s">'.data[].name'</span>
+
+<span class="t-c"># Ver las últimas 5 ejecuciones</span>
+<span class="t-v">curl</span> -s <span class="t-s">"https://pod-1.dopla.app/api/v1/executions?limit=5"</span> \
+  -H <span class="t-s">"X-N8N-API-KEY: TU_API_KEY"</span> \
+  | <span class="t-v">jq</span> <span class="t-s">'.data[] | {id, workflowId, status, startedAt}'</span></pre>
+      </div>
+
+      <div class="hbox orange" style="margin-top:24px">
+        <div class="hbox-title">🔥 El patrón híbrido (lo que uso en Dopla)</div>
+        <div class="hbox-body"><strong>Construcción y desarrollo:</strong> Claude Code + MCP → crear, editar, validar workflows<br>
+        <strong>Operación y monitoreo:</strong> Scripts bash + API REST → chequear ejecuciones, activar/desactivar<br>
+        <strong>Integración entre sistemas:</strong> HTTP Request node dentro de n8n → llama a otro workflow via API</div>
+      </div>
+
+      <div class="exercise">
+        <div class="ex-header">
+          <div class="ex-badge">Ejercicio 01</div>
+          <div class="ex-title">Conectar y verificar</div>
+        </div>
+        <div class="ex-steps">
+          <div class="ex-step"><div class="step-n">1</div><div class="step-b"><div class="step-t">Habilitar API en tu n8n</div><div class="step-d">Settings → API → Enable API → Copy API Key</div></div></div>
+          <div class="ex-step"><div class="step-n">2</div><div class="step-b"><div class="step-t">Agregar n8n-mcp al .mcp.json</div><div class="step-d">Usa el template de la sección anterior con tu URL y API key</div></div></div>
+          <div class="ex-step"><div class="step-n">3</div><div class="step-b"><div class="step-t">Verificar en Claude Code</div><div class="step-d">Escribe: <code style="color:var(--purple-light);font-family:var(--font-mono)">/mcp</code> → n8n-mcp debe aparecer ✅</div></div></div>
+          <div class="ex-step"><div class="step-n">4</div><div class="step-b"><div class="step-t">Primera prueba</div><div class="step-d">Escribe: <em>"lista mis workflows"</em> — Claude debe devolver tus workflows reales</div></div></div>
+        </div>
+      </div>
+    </div><!-- /sec-1 -->
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 2: LAS 6 SKILLS                -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section" id="sec-2">
+      <div class="sh">
+        <div class="sh-tag">02 · Skills</div>
+        <div class="sh-title">Las 6 skills de n8n — qué hace cada una</div>
+        <div class="divider"></div>
+        <div class="sh-sub">Las skills son conocimiento especializado inyectado en Claude. Las activa automáticamente cuando detecta que las necesita.</div>
+      </div>
+
+      <div class="callout info">
+        <div class="ci">📦</div>
+        <div class="cb"><div class="ct">¿Cómo se instalan?</div>
+        <div class="cd">Las skills van en <code style="color:var(--blue);font-family:var(--font-mono)">~/.claude/skills/[nombre]/SKILL.md</code>. Claude las carga automáticamente al inicio de cada sesión. No necesitas invocarlas manualmente.</div></div>
+      </div>
+
+      <div style="margin-top:20px">
+        <div class="skill-row">
+          <div class="skill-icon">📐</div>
+          <div class="skill-info">
+            <div class="skill-name">n8n-workflow-patterns</div>
+            <div class="skill-desc">5 patrones arquitecturales probados con sub-archivos por patrón: webhook_processing.md, ai_agent_workflow.md, scheduled_tasks.md, etc.</div>
+            <div class="skill-when">Invocar cuando: <span>diseñando un workflow nuevo desde cero o eligiendo arquitectura</span></div>
+          </div>
+          <div class="badge green">Arquitectura</div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-icon">🔧</div>
+          <div class="skill-info">
+            <div class="skill-name">n8n-mcp-tools-expert</div>
+            <div class="skill-desc">Guía de uso de todas las herramientas MCP. Ranking por success rate. Formato correcto de nodeType (nodes-base.slack vs n8n-nodes-base.slack).</div>
+            <div class="skill-when">Invocar cuando: <span>usando cualquier herramienta MCP de n8n o si Claude no sabe qué tool usar</span></div>
+          </div>
+          <div class="badge purple">MCP</div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-icon">⚙️</div>
+          <div class="skill-info">
+            <div class="skill-name">n8n-node-configuration</div>
+            <div class="skill-desc">Configuración específica por tipo de nodo. Property dependencies (campos que aparecen/desaparecen según otros valores). Evita campos requeridos olvidados.</div>
+            <div class="skill-when">Invocar cuando: <span>configurando un nodo específico o cuando hay error de campo faltante</span></div>
+          </div>
+          <div class="badge orange">Config</div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-icon">🟨</div>
+          <div class="skill-info">
+            <div class="skill-name">n8n-code-javascript</div>
+            <div class="skill-desc">Sintaxis $input/$json/$node. CRÍTICO: datos webhook bajo $json.body (no $json directo). Formato de retorno: [{json: {...}}]. Built-ins: $helpers.httpRequest(), DateTime.</div>
+            <div class="skill-when">Invocar cuando: <span>escribiendo código JS en Code nodes</span></div>
+          </div>
+          <div class="badge blue">Código</div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-icon">🧮</div>
+          <div class="skill-info">
+            <div class="skill-name">n8n-expression-syntax</div>
+            <div class="skill-desc">Sintaxis de expresiones {{ }}. REGLA: $('Nodo').item.json.campo en vez de $json (evita roturas al insertar nodos). Fechas con toDateTime().format().</div>
+            <div class="skill-when">Invocar cuando: <span>escribiendo expresiones o cuando una expresión da undefined</span></div>
+          </div>
+          <div class="badge green">Expresiones</div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-icon">✅</div>
+          <div class="skill-info">
+            <div class="skill-name">n8n-validation-expert</div>
+            <div class="skill-desc">Interpreta errores de validación. Loop: validate → fix → validate. Profiles: minimal, runtime (recomendado), strict. Detecta falsos positivos.</div>
+            <div class="skill-when">Invocar cuando: <span>hay errores de validación o antes de deploy a producción</span></div>
+          </div>
+          <div class="badge purple">Validación</div>
+        </div>
+      </div>
+
+      <div class="callout tip" style="margin-top:24px">
+        <div class="ci">🔥</div>
+        <div class="cb"><div class="ct">Demo rápida</div>
+        <div class="cd">Escribe en Claude Code: <em>"por qué falla la expresión {{ $json.nombre }} cuando inserto un nodo antes del webhook?"</em><br>
+        → Claude activará <code style="color:var(--green-light);font-family:var(--font-mono)">n8n-expression-syntax</code> automáticamente y explicará que debes usar <code style="color:var(--green-light);font-family:var(--font-mono)">${'nombre del nodo'}.item.json.nombre</code></div></div>
+      </div>
+
+      <div class="tbl-wrap" style="margin-top:20px">
+        <table>
+          <thead><tr><th>Situación</th><th>Skill activada</th><th>Qué recomienda</th></tr></thead>
+          <tbody>
+            <tr><td>"Quiero crear un workflow desde cero"</td><td><code style="font-family:var(--font-mono);color:var(--green-light)">n8n-workflow-patterns</code></td><td>Elige el patrón correcto (webhook, schedule, etc.)</td></tr>
+            <tr><td>"No sé qué nodo usar para X"</td><td><code style="font-family:var(--font-mono);color:var(--green-light)">n8n-mcp-tools-expert</code></td><td>search_nodes → get_node</td></tr>
+            <tr><td>"El nodo de Slack da error"</td><td><code style="font-family:var(--font-mono);color:var(--green-light)">n8n-node-configuration</code></td><td>Campos requeridos para esa operación</td></tr>
+            <tr><td>"Necesito transformar datos"</td><td><code style="font-family:var(--font-mono);color:var(--green-light)">n8n-code-javascript</code></td><td>Sintaxis correcta + formato de retorno</td></tr>
+            <tr><td>"La expresión devuelve undefined"</td><td><code style="font-family:var(--font-mono);color:var(--green-light)">n8n-expression-syntax</code></td><td>Usar $('Nodo').item.json.campo</td></tr>
+            <tr><td>"Hay N errores de validación"</td><td><code style="font-family:var(--font-mono);color:var(--green-light)">n8n-validation-expert</code></td><td>Fix priorizado + detecta falsos positivos</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div><!-- /sec-2 -->
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 3: CLAUDE.md + MEMORY          -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section" id="sec-3">
+      <div class="sh">
+        <div class="sh-tag">03 · Contexto</div>
+        <div class="sh-title">CLAUDE.md como cuestionario + MEMORY.md</div>
+        <div class="divider"></div>
+        <div class="sh-sub">El CLAUDE.md es lo que le das a Claude para que nunca tenga que preguntarte lo mismo dos veces. MEMORY.md es lo que Claude aprende solo.</div>
+      </div>
+
+      <div class="cards-2">
+        <div class="card purple">
+          <div class="card-icon">📝</div>
+          <div class="card-title">CLAUDE.md — Lo que TÚ le dices</div>
+          <div class="card-desc">Cuestionario de 6 secciones que rellenas UNA vez. Incluye tu URL de n8n, credenciales disponibles, naming conventions, reglas de negocio. Claude lo lee al inicio de cada sesión.</div>
+        </div>
+        <div class="card green">
+          <div class="card-icon">🧠</div>
+          <div class="card-title">MEMORY.md — Lo que Claude aprende</div>
+          <div class="card-desc">Claude actualiza este archivo solo al terminar cada sesión. Registra errores encontrados + fix, gotchas del setup, patrones que funcionaron, configuraciones que tardaron en encontrar.</div>
+        </div>
+      </div>
+
+      <div class="sh-tag" style="margin-top:28px">Las 6 secciones del CLAUDE.md</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Sección</th><th>Qué incluye</th><th>Prioridad</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Infraestructura</td><td>URL n8n, Coolify, microservicios activos, modo de auth</td><td><span class="badge orange">REQUERIDO</span></td></tr>
+            <tr><td>2</td><td>Cliente / Proyecto</td><td>Nombre, tipo de negocio, proceso principal, reglas de negocio, multi-tenant</td><td><span class="badge orange">REQUERIDO</span></td></tr>
+            <tr><td>3</td><td>Recursos frecuentes</td><td>Credenciales en n8n (nombres exactos), nodos más usados, integraciones activas</td><td><span class="badge orange">REQUERIDO</span></td></tr>
+            <tr><td>4</td><td>Convenciones</td><td>Naming de workflows, webhooks, nodos. Idioma preferido.</td><td><span class="badge green">Recomendado</span></td></tr>
+            <tr><td>5</td><td>Skills y MCPs</td><td>Checklist de skills instaladas y MCPs activos en este proyecto</td><td><span class="badge green">Recomendado</span></td></tr>
+            <tr><td>6</td><td>Instrucciones especiales</td><td>Cómo quieres que Claude responda, qué preguntar antes de hacer, qué no hacer</td><td><span class="badge purple">Opcional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sh-tag" style="margin-top:28px">Ejemplo: Sección 3 rellena (mi setup real)</div>
+      <div class="code-wrap">
+        <div class="code-label">CLAUDE.md → Sección 3</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c">## SECCIÓN 3: Recursos Frecuentes</span>
+
+<span class="t-c">### Credenciales disponibles en n8n (nombres exactos)</span>
+| Nombre en n8n            | Servicio    | Para qué se usa                |
+|--------------------------|-------------|--------------------------------|
+| OpenRouter API           | OpenRouter  | LLM routing (Haiku, GPT-4o)   |
+| Supabase HTTP — Dopla    | Supabase    | Base de datos principal        |
+| Gmail OAuth2 — Carlos    | Gmail       | Notificaciones y correos       |
+| PDF-Co API               | PDF-Co      | Conversión HTML → PDF          |
+| Apify API                | Apify       | Scraping Instagram             |
+
+<span class="t-c">### Nodos que más uso en este proyecto</span>
+- <span class="t-b">[x]</span> Webhook — path base: <span class="t-s">/dopla/</span>
+- <span class="t-b">[x]</span> HTTP Request — hacia: <span class="t-s">https://yotjjhv...supabase.co/rest/v1/</span>
+- <span class="t-b">[x]</span> Switch — criterio: <span class="t-s">tipo_contenido</span>
+- <span class="t-b">[x]</span> executeWorkflow — sub-workflows activos: 4
+- <span class="t-b">[x]</span> Code (JS) — para: normalización de datos y cálculo de créditos</pre>
+      </div>
+
+      <div class="sh-tag" style="margin-top:28px">Cómo Claude actualiza el MEMORY.md</div>
+      <div class="code-wrap">
+        <div class="code-label">MEMORY.md — formato de entrada</div>
+        <pre class="code"><span class="t-c">## ERRORES ENCONTRADOS Y FIXES</span>
+
+<span class="t-c">### [2026-04-28] — executeWorkflow no pasaba tenant_id al sub-workflow</span>
+
+<span class="t-k">Contexto:</span> Router Dopla → Sub Carrusel
+<span class="t-k">Síntoma:</span> El sub-workflow recibía tenant_id como undefined
+<span class="t-k">Causa raíz:</span> Los campos en executeWorkflow necesitan type: "string" explícito
+<span class="t-k">Fix:</span>
+  fields.values[].stringValue en vez de .value
+  + agregar type: "string" en cada campo
+<span class="t-k">Afecta a:</span> Todos los executeWorkflow del proyecto Dopla
+<span class="t-k">Aprendizaje:</span> Siempre especificar type en campos de executeWorkflow</pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="ci">💡</div>
+        <div class="cb"><div class="ct">La combinación correcta</div>
+        <div class="cd"><strong>CLAUDE.md</strong> = contexto estático (quién eres, qué tienes). <strong>MEMORY.md</strong> = contexto dinámico (qué aprendiste). Juntos le dan a Claude la "memoria" de un desarrollador senior en tu proyecto específico.</div></div>
+      </div>
+    </div><!-- /sec-3 -->
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 4: SUB-WORKFLOWS (DOPLA)       -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section" id="sec-4">
+      <div class="sh">
+        <div class="sh-tag">04 · Arquitectura</div>
+        <div class="sh-title">Sub-workflows: el patrón Router → Subs de Dopla</div>
+        <div class="divider"></div>
+        <div class="sh-sub">Automatizaciones determinísticas — sin agentes IA. Cada rama del flujo es predecible, testeable y aislada.</div>
+      </div>
+
+      <div class="hbox green">
+        <div class="hbox-title">🏗️ Arquitectura de Dopla (producción real)</div>
+        <div class="hbox-body">6 workflows JSON en producción. Todos adaptados para multi-tenancy: cada workflow lee tenant_id del webhook y resuelve credenciales dinámicamente desde Supabase.</div>
+      </div>
+
+      <div style="margin:24px 0">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Diagrama del sistema</div>
+        <div class="flow">
+          <div class="fn orange">📝 Webhook<br><small style="font-size:10px;opacity:0.7">/dopla/content/generate</small></div>
+          <div class="fa">→</div>
+          <div class="fn">✅ Validar<br><small style="font-size:10px;opacity:0.7">content_id, tenant_id</small></div>
+          <div class="fa">→</div>
+          <div class="fn blue">🔍 Enriquecer<br><small style="font-size:10px;opacity:0.7">leer Supabase</small></div>
+          <div class="fa">→</div>
+          <div class="fn purple">⑂ Switch<br><small style="font-size:10px;opacity:0.7">tipo_contenido</small></div>
+        </div>
+        <div style="margin-left:60px;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <div class="fn green" style="font-size:11px">🖼️ Sub: Carrusel</div>
+          <div class="fn green" style="font-size:11px">📷 Sub: Post Estático</div>
+          <div class="fn green" style="font-size:11px">🎬 Sub: Reel</div>
+          <div class="fn green" style="font-size:11px">👤 Sub: Reel UGC</div>
+        </div>
+      </div>
+
+      <div class="cards-2" style="margin-top:24px">
+        <div>
+          <div class="sh-tag">¿Cuándo crear un sub-workflow?</div>
+          <ul class="check-list">
+            <li><div class="ci-g">✓</div>La lógica tiene más de 8 nodos Y es reutilizable</li>
+            <li><div class="ci-g">✓</div>El mismo proceso se invoca desde múltiples workflows</li>
+            <li><div class="ci-g">✓</div>Quieres testear esa parte en aislamiento</li>
+            <li><div class="ci-g">✓</div>Es un tipo de contenido/proceso diferente (carrusel ≠ reel)</li>
+          </ul>
+          <div class="sh-tag" style="margin-top:20px">¿Cuándo NO crear uno?</div>
+          <ul class="check-list">
+            <li><div class="ci-p">✗</div>Es una variante menor — usa Switch en su lugar</li>
+            <li><div class="ci-p">✗</div>Solo se usa una vez y tiene menos de 5 nodos</li>
+            <li><div class="ci-p">✗</div>La latencia es crítica (executeWorkflow añade ~200ms)</li>
+          </ul>
+        </div>
+        <div>
+          <div class="sh-tag">Estructura obligatoria de un sub-workflow</div>
+          <div class="code-wrap" style="margin-top:8px">
+            <pre class="code" style="font-size:12px"><span class="t-c">Todo sub-workflow:</span>
+
+1. <span class="t-v">Trigger</span>: <span class="t-s">"Execute Workflow Trigger"</span>
+   <span class="t-c">   ↑ NO webhook — este es el entry</span>
+
+2. <span class="t-v">Validar</span> parámetros recibidos del padre
+   <span class="t-c">   ↑ IF: tenant_id != vacío, etc.</span>
+
+3. <span class="t-v">[Lógica</span> específica del sub<span class="t-v">]</span>
+   <span class="t-c">   ↑ Lo que hace este sub-workflow</span>
+
+4. <span class="t-v">Set</span> node — campos de retorno al padre
+   <span class="t-c">   ↑ status, output_url, credits_used</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="sh-tag" style="margin-top:24px">Pasar datos padre → hijo (multi-tenant)</div>
+      <div class="code-wrap">
+        <div class="code-label">executeWorkflow node config</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c">// En el Router (padre) — executeWorkflow node:</span>
+{
+  <span class="t-k">"workflowId"</span>: <span class="t-s">"={{ $json.sub_workflow_id }}"</span>,  <span class="t-c">// Dinámico desde Supabase</span>
+  <span class="t-k">"mode"</span>: <span class="t-s">"Single Run"</span>,
+  <span class="t-k">"fields"</span>: {
+    <span class="t-k">"values"</span>: [
+      { <span class="t-k">"name"</span>: <span class="t-s">"tenant_id"</span>, <span class="t-k">"stringValue"</span>: <span class="t-s">"={{ $json.tenant_id }}"</span>, <span class="t-k">"type"</span>: <span class="t-s">"string"</span> },
+      { <span class="t-k">"name"</span>: <span class="t-s">"content_id"</span>, <span class="t-k">"stringValue"</span>: <span class="t-s">"={{ $json.content_id }}"</span>, <span class="t-k">"type"</span>: <span class="t-s">"string"</span> },
+      { <span class="t-k">"name"</span>: <span class="t-s">"brand_data"</span>, <span class="t-k">"stringValue"</span>: <span class="t-s">"={{ JSON.stringify($json.brand_data) }}"</span>, <span class="t-k">"type"</span>: <span class="t-s">"string"</span> }
+    ]
+  }
+}
+
+<span class="t-c">// En el hijo — acceder a los datos:</span>
+<span class="t-s">"={{ $json.tenant_id }}"</span>  <span class="t-c">// Disponible directamente en $json</span>
+
+<span class="t-c">// ⚠️ GOTCHA: type: "string" es OBLIGATORIO. Sin él, el campo llega como undefined.</span></pre>
+      </div>
+
+      <div class="callout warn">
+        <div class="ci">⚠️</div>
+        <div class="cb"><div class="ct">Regla multi-tenant — nunca violar</div>
+        <div class="cd">El <code style="color:var(--yellow);font-family:var(--font-mono)">tenant_id</code> fluye en TODOS los nodos del sub-workflow. Nunca hardcodear credenciales. Siempre: <strong>tenant_id → buscar credenciales en tabla tenants → usar credenciales del tenant.</strong></div></div>
+      </div>
+
+      <div class="exercise">
+        <div class="ex-header">
+          <div class="ex-badge">Ejercicio 02</div>
+          <div class="ex-title">Diseñar con el subagente workflow-architect</div>
+        </div>
+        <div class="ex-steps">
+          <div class="ex-step"><div class="step-n">1</div><div class="step-b"><div class="step-t">Copia este prompt en Claude Code</div><div class="step-d">"Actúa como workflow-architect. Diseña el plan para: recibir un formulario de contacto por webhook, calificar el lead con un Code node (RDS > 500 y FG >= 5), guardar en Google Sheets, y enviar email con Gmail con o sin botón según calificación."</div></div></div>
+          <div class="ex-step"><div class="step-n">2</div><div class="step-b"><div class="step-t">Verifica el output</div><div class="step-d">Debe incluir: diagrama ASCII, tabla de nodos, posiciones de sticky notes, y secuencia de construcción paso a paso</div></div></div>
+          <div class="ex-step"><div class="step-n">3</div><div class="step-b"><div class="step-t">Pídele que lo construya</div><div class="step-d">"Ahora créalo en mi n8n usando el plan que generaste"</div></div></div>
+        </div>
+      </div>
+    </div><!-- /sec-4 -->
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 5: SKILL EXCLUSIVA             -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section" id="sec-5">
+      <div class="sh">
+        <div class="sh-tag purple">05 · Skill Nueva</div>
+        <div class="sh-title">n8n-coolify-fullstack — La skill exclusiva</div>
+        <div class="divider"></div>
+        <div class="sh-sub">Combina 5 disciplinas que trabajan juntas en proyectos n8n de producción real.</div>
+      </div>
+
+      <div class="cards-3">
+        <div class="card purple"><div class="card-icon">🚢</div><div class="card-title">Coolify MCP</div><div class="card-desc">Gestionar microservicios sin salir de Claude Code. list, get, restart, redeploy, logs.</div></div>
+        <div class="card green"><div class="card-icon">📌</div><div class="card-title">Sticky Notes</div><div class="card-desc">4 zonas obligatorias. Colores, dimensiones y posiciones estándar. JSON para crear via MCP.</div></div>
+        <div class="card blue"><div class="card-icon">✅</div><div class="card-title">Validación Dual</div><div class="card-desc">MCP validate_workflow + Playwright E2E visual. Dos capas que se complementan.</div></div>
+        <div class="card orange"><div class="card-icon">⑂</div><div class="card-title">Sub-workflows</div><div class="card-desc">Cuándo crear, cómo pasar datos, cómo debuggear. Basado en el patrón Dopla.</div></div>
+        <div class="card green"><div class="card-icon">🔗</div><div class="card-title">Microservicio Integration</div><div class="card-desc">n8n ↔ Docker en Coolify. Patrones: síncrono, async+callback, polling.</div></div>
+        <div class="card purple"><div class="card-icon">📊</div><div class="card-title">El flujo maestro</div><div class="card-desc">Diseño → Build → Validate → Operate. Un pipeline completo para proyectos reales.</div></div>
+      </div>
+
+      <div class="sh-tag" style="margin-top:28px">Sticky Notes — Las 4 zonas obligatorias</div>
+      <div class="code-wrap">
+        <div class="code-label">Crear sticky note vía MCP</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c">// En n8n_update_partial_workflow — agregar sticky note header</span>
+{
+  <span class="t-k">type</span>: <span class="t-s">"addNode"</span>,
+  <span class="t-k">node</span>: {
+    <span class="t-k">type</span>: <span class="t-s">"n8n-nodes-base.stickyNote"</span>,
+    <span class="t-k">name</span>: <span class="t-s">"Doc — Header"</span>,
+    <span class="t-k">parameters</span>: {
+      <span class="t-k">content</span>: <span class="t-s">"## [Nombre del Workflow]\n\n**Propósito:** [qué automatiza]\n**Trigger:** [qué lo activa]\n**Deps:** [sub-workflows, micros]\n**Modificado:** 2026-04-29"</span>,
+      <span class="t-k">color</span>: <span class="t-n">5</span>,       <span class="t-c">// 1=amarillo, 2=rojo, 3=verde, 4=azul, 5=morado</span>
+      <span class="t-k">width</span>: <span class="t-n">400</span>,
+      <span class="t-k">height</span>: <span class="t-n">200</span>
+    },
+    <span class="t-k">position</span>: [<span class="t-n">-2400</span>, <span class="t-n">-100</span>]   <span class="t-c">// Antes del primer nodo del workflow</span>
+  }
+}</pre>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Zona</th><th>Posición</th><th>Color</th><th>Contenido</th></tr></thead>
+          <tbody>
+            <tr><td>Header (workflow)</td><td>(-2400, -100)</td><td>5 - Morado</td><td>Nombre, propósito, trigger, dependencias, fecha</td></tr>
+            <tr><td>Validación de entrada</td><td>(-1800, 0)</td><td>1 - Amarillo</td><td>Qué se valida, qué pasa si falla</td></tr>
+            <tr><td>Lógica principal</td><td>(-1000, 0)</td><td>3 - Verde</td><td>Flujo de decisión, criterios del Switch</td></tr>
+            <tr><td>Outputs / efectos</td><td>(200, 0)</td><td>4 - Azul</td><td>Qué actualiza, qué notifica, qué llama</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sh-tag" style="margin-top:24px">Coolify MCP — verificar microservicio antes de llamarlo</div>
+      <div class="code-wrap">
+        <div class="code-label">Patrón: check before call</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c"># En Claude Code — antes de que un workflow llame a un microservicio:</span>
+
+<span class="t-s">"Verifica que el servicio ffmpeg-merger-dopla está corriendo en Coolify
+ y muéstrame los últimos logs si hay errores"</span>
+
+<span class="t-c"># Claude invoca Coolify MCP:</span>
+<span class="t-v">list_applications</span>()          <span class="t-c">// Encuentra el uuid del servicio</span>
+<span class="t-v">get_application</span>({uuid})      <span class="t-c">// Verifica status: "running" | "stopped"</span>
+<span class="t-c">// Si está stopped:</span>
+<span class="t-v">restart_application</span>({uuid})  <span class="t-c">// Lo reinicia</span>
+<span class="t-c">// Si falló:</span>
+<span class="t-v">get_application_logs</span>({uuid}) <span class="t-c">// Diagnóstico del error</span></pre>
+      </div>
+
+      <div class="sh-tag" style="margin-top:24px">Instalar la skill en tu sistema</div>
+      <div class="code-wrap">
+        <div class="code-label">bash</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c"># Copiar desde el repo a tu instalación de Claude Code</span>
+<span class="t-v">cp</span> -r skills/n8n-coolify-fullstack ~/.claude/skills/
+
+<span class="t-c"># Verificar que quedó</span>
+<span class="t-v">ls</span> ~/.claude/skills/n8n-coolify-fullstack/
+
+<span class="t-c"># Output esperado:</span>
+<span class="t-s">SKILL.md  coolify-microservices.md  dual-layer-validation.md</span>
+<span class="t-s">microservice-integration.md  sticky-notes-patterns.md  sub-workflow-patterns.md</span>
+
+<span class="t-c"># Reiniciar Claude Code → la skill se carga automáticamente</span></pre>
+      </div>
+    </div><!-- /sec-5 -->
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 6: CHROME + PLAYWRIGHT E2E     -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section" id="sec-6">
+      <div class="sh">
+        <div class="sh-tag">06 · Validación E2E</div>
+        <div class="sh-title">Chrome profile + Playwright — Debug con sesión activa</div>
+        <div class="divider"></div>
+        <div class="sh-sub">El problema: Playwright lanza un Chrome nuevo sin login. La solución: un perfil de Chrome dedicado con las sesiones de n8n y Coolify ya guardadas.</div>
+      </div>
+
+      <div class="callout info">
+        <div class="ci">💡</div>
+        <div class="cb"><div class="ct">Por qué importa</div>
+        <div class="cd">Sin sesión activa, Playwright ve la pantalla de login — no el workflow. Con un perfil Chrome persistente, entra directamente al canvas del workflow, puede tomar screenshots reales, hacer click en "Execute Workflow" y ver el resultado.</div></div>
+      </div>
+
+      <div class="sh-tag" style="margin-top:24px">Setup del perfil Chrome (una vez)</div>
+      <div class="code-wrap">
+        <div class="code-label">bash — setup inicial (solo la primera vez)</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c"># 1. Crear el perfil (en Chrome UI: chrome://settings/ → Perfiles → Agregar)</span>
+<span class="t-c">#    Nombre del perfil: "N8N Coolify Dev"</span>
+<span class="t-c">#    Logearte en pod-1.dopla.app y coolify.dopla.app en ese perfil</span>
+
+<span class="t-c"># 2. Encontrar el nombre del directorio del perfil</span>
+<span class="t-v">ls</span> ~/Library/Application\ Support/Google/Chrome/ | <span class="t-v">grep</span> -i profile
+<span class="t-c"># Ejemplo output: Profile 2, Profile 3, Default</span>
+
+<span class="t-c"># 3. Guardar en .env del proyecto (nunca en git)</span>
+<span class="t-v">echo</span> <span class="t-s">'PLAYWRIGHT_CHROME_PROFILE_PATH="/Users/TU_USUARIO/Library/Application Support/Google/Chrome/Profile 2"'</span> >> .env
+<span class="t-v">echo</span> <span class="t-s">'PLAYWRIGHT_CDP_PORT=9222'</span> >> .env</pre>
+      </div>
+
+      <div class="sh-tag" style="margin-top:20px">Dos modos de uso</div>
+      <div class="session-modes">
+        <div class="session-mode recommended">
+          <div class="sm-header">
+            <div class="sm-badge rec">Recomendado</div>
+            <div class="sm-title">Modo A — Perfil persistente</div>
+          </div>
+          <div class="sm-desc">Playwright lanza Chrome con el perfil guardado. Más simple, funciona siempre.</div>
+          <div class="code-wrap" style="margin-top:12px">
+            <pre class="code" style="font-size:11px">{
+  <span class="t-k">"playwright"</span>: {
+    <span class="t-k">"command"</span>: <span class="t-s">"npx"</span>,
+    <span class="t-k">"args"</span>: [
+      <span class="t-s">"@playwright/mcp@latest"</span>,
+      <span class="t-s">"--browser=chrome"</span>,
+      <span class="t-s">"--user-data-dir=/Users/TU_USER/Library/Application Support/Google/Chrome/Profile 2"</span>
+    ]
+  }
+}</pre>
+          </div>
+        </div>
+        <div class="session-mode">
+          <div class="sm-header">
+            <div class="sm-badge alt">Alternativo</div>
+            <div class="sm-title">Modo B — CDP en vivo</div>
+          </div>
+          <div class="sm-desc">Conectar a Chrome ya corriendo. Puedes ver lo mismo que el usuario en tiempo real.</div>
+          <div class="code-wrap" style="margin-top:12px">
+            <pre class="code" style="font-size:11px"><span class="t-c"># Lanzar Chrome con debug:</span>
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  <span class="t-s">--remote-debugging-port=9222</span> \
+  <span class="t-s">--user-data-dir="Profile 2"</span>
+
+<span class="t-c"># En .mcp.json:</span>
+<span class="t-k">"playwright"</span>: {
+  <span class="t-k">"args"</span>: [<span class="t-s">"@playwright/mcp@latest"</span>,
+           <span class="t-s">"--cdp-endpoint=http://localhost:9222"</span>]
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="sh-tag" style="margin-top:24px">Validación dual en acción — Demo en vivo</div>
+      <div class="code-wrap">
+        <div class="code-label">Claude Code chat — secuencia completa</div>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre class="code"><span class="t-c"># CAPA 1: Validación MCP (estructura)</span>
+<span class="t-s">"Valida el workflow Router de Dopla con perfil runtime y dime si hay errores"</span>
+
+<span class="t-c"># Claude invoca:</span>
+<span class="t-v">validate_workflow</span>({id: <span class="t-s">"[workflow-id]"</span>, profile: <span class="t-s">"runtime"</span>})
+<span class="t-c"># Si hay errores:</span>
+<span class="t-v">n8n_autofix_workflow</span>({id, applyFixes: <span class="t-b">false</span>})  <span class="t-c">// Preview de fixes</span>
+<span class="t-v">n8n_autofix_workflow</span>({id, applyFixes: <span class="t-b">true</span>})   <span class="t-c">// Aplicar fixes</span>
+
+<span class="t-c"># CAPA 2: Validación Playwright (visual)</span>
+<span class="t-s">"Ahora abre el workflow en el browser y toma un screenshot para verificar que los sticky notes están presentes"</span>
+
+<span class="t-c"># Claude invoca Playwright MCP:</span>
+<span class="t-v">browser_navigate</span>({url: <span class="t-s">"https://pod-1.dopla.app/workflow/[id]"</span>})
+<span class="t-v">browser_take_screenshot</span>()           <span class="t-c">// Captura visual</span>
+<span class="t-v">browser_snapshot</span>()                  <span class="t-c">// Accessibility tree — busca nodos y notas</span></pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="ci">🎯</div>
+        <div class="cb"><div class="ct">Lo que detecta cada capa</div>
+        <div class="cd"><strong>MCP validate_workflow:</strong> nodos mal configurados, conexiones rotas, campos faltantes — en el JSON.<br>
+        <strong>Playwright:</strong> si los sticky notes están visualmente en el canvas, si el toggle de activación está verde, si la UI muestra lo esperado.</div></div>
+      </div>
+
+      <div class="exercise">
+        <div class="ex-header">
+          <div class="ex-badge">Ejercicio 03</div>
+          <div class="ex-title">Validación dual completa</div>
+        </div>
+        <div class="ex-steps">
+          <div class="ex-step"><div class="step-n">1</div><div class="step-b"><div class="step-t">Crear el perfil Chrome</div><div class="step-d">Chrome → Settings → Agregar perfil → "N8N Dev" → Logearte en tu n8n</div></div></div>
+          <div class="ex-step"><div class="step-n">2</div><div class="step-b"><div class="step-t">Configurar Playwright MCP con ese perfil</div><div class="step-d">Agregar --user-data-dir al .mcp.json con la ruta de tu perfil</div></div></div>
+          <div class="ex-step"><div class="step-n">3</div><div class="step-b"><div class="step-t">Validar el workflow que creaste en el Ejercicio 02</div><div class="step-d">"Valida el workflow 'Lead Qualifier' con MCP y luego toma un screenshot en el browser"</div></div></div>
+          <div class="ex-step"><div class="step-n">4</div><div class="step-b"><div class="step-t">Ver el reporte</div><div class="step-d">Claude debe reportar: errores MCP + screenshot visual con el estado del canvas</div></div></div>
+        </div>
+      </div>
+    </div><!-- /sec-6 -->
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SECCIÓN 7: RETO COMUNIDAD              -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section" id="sec-7">
+      <div class="challenge-box">
+        <div class="challenge-title">🏆 Reto de la Semana</div>
+        <div class="challenge-sub">Construye UN workflow determinístico real con Claude Code. Postea el resultado en #vibe-coding con screenshot y video de 30s.</div>
+        <div class="challenge-steps">
+          <div class="cs"><div class="cs-n">01</div><div class="cs-t">Configura el MCP</div><div class="cs-d">n8n-mcp + perfil Chrome. Verifica con /mcp → ✅ connected</div></div>
+          <div class="cs"><div class="cs-n">02</div><div class="cs-t">Elige un caso real</div><div class="cs-d">Formularios, notificaciones, reportes. Algo que ya tienes pendiente automatizar.</div></div>
+          <div class="cs"><div class="cs-n">03</div><div class="cs-t">Pídele a Claude que lo diseñe</div><div class="cs-d">"Actúa como workflow-architect..." → plan completo con sticky notes</div></div>
+          <div class="cs"><div class="cs-n">04</div><div class="cs-t">Valida y postea</div><div class="cs-d">Validación dual (MCP + Playwright screenshot) → postea en #vibe-coding</div></div>
+        </div>
+      </div>
+
+      <div class="sh-tag" style="margin-top:32px">El repo que se llevan hoy</div>
+      <div class="cards-2">
+        <div>
+          <ul class="check-list">
+            <li><div class="ci-g">📦</div><strong>n8n-mcp</strong> — MCP pre-configurado con tu URL</li>
+            <li><div class="ci-g">🚢</div><strong>Coolify MCP</strong> — gestión de microservicios</li>
+            <li><div class="ci-g">🧠</div><strong>6 skills n8n</strong> — workflow-patterns, mcp-tools-expert, node-configuration, code-javascript, expression-syntax, validation-expert</li>
+            <li><div class="ci-g">⭐</div><strong>n8n-coolify-fullstack</strong> — la skill exclusiva de hoy</li>
+          </ul>
+        </div>
+        <div>
+          <ul class="check-list">
+            <li><div class="ci-p">📝</div><strong>CLAUDE.md template</strong> — cuestionario de 6 secciones</li>
+            <li><div class="ci-p">🧠</div><strong>MEMORY.md template</strong> — autoaprendizaje con 6 categorías</li>
+            <li><div class="ci-p">🤖</div><strong>Subagente workflow-architect</strong> — diseña planes completos</li>
+            <li><div class="ci-p">🎬</div><strong>Workflows Dopla</strong> — 4 workflows reales sanitizados como referencia</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="hbox green" style="margin-top:24px;text-align:center">
+        <div class="hbox-title">GitHub</div>
+        <div class="hbox-body" style="font-size:16px;font-weight:600">github.com/getforja/n8n-automation-kit</div>
+        <div style="font-size:13px;color:var(--dim);margin-top:4px">Star ⭐ el repo para recibir updates cuando agreguemos más skills y workflows</div>
+      </div>
+    </div><!-- /sec-7 -->
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item[onclick]');
+const sectionNames = ['Intro & Setup','MCP vs API','Las 6 Skills','CLAUDE.md + MEMORY','Sub-workflows (Dopla)','Skill Exclusiva','Chrome + Playwright E2E','Reto Comunidad'];
+let current = 0;
+
+function showSection(i, el) {
+  sections[current].classList.remove('active');
+  navItems.forEach(n => n.classList.remove('active'));
+  current = i;
+  sections[i].classList.add('active');
+  if(el) el.classList.add('active');
+  else if(navItems[i]) navItems[i].classList.add('active');
+  document.getElementById('current-section-name').textContent = sectionNames[i];
+  window.scrollTo(0,0);
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if(current < sections.length-1) showSection(current+1, navItems[current+1]); }
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if(current > 0) showSection(current-1, navItems[current-1]); }
+});
+
+function copyCode(btn) {
+  const pre = btn.parentElement.querySelector('pre');
+  const text = pre ? pre.innerText : '';
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

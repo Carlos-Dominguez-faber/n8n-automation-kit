@@ -1,0 +1,41 @@
+# Environment variables — NUNCA subir al repo
+.env
+.env.local
+.env.production
+.env.*
+
+# MCP con credenciales reales — usar templates/.mcp.json como referencia
+.mcp.json
+
+# API keys y tokens específicos
+*api-key*
+*api_key*
+*secret*
+*.credentials
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Claude Code — cache local
+.claude/cache/
+.claude/history.jsonl
+.claude/sessions/
+
+# Playwright artifacts
+test-results/
+playwright-report/
+screenshots/
+
+# Logs
+*.log
+logs/
+
+# Temporales
+*.tmp
+*.temp

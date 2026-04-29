@@ -1,0 +1,209 @@
+{
+  "name": "Starter — Webhook Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "starter/route",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Webhook Router — Starter\n\n**Propósito:** Template de inicio para workflows con webhook y despacho por tipo\n**Trigger:** POST /starter/route\n**Estructura:** Validar → Responder 202 → Procesar async\n**Modificar:** Cambiar el Switch y agregar tus ramas\n\n**Pasos para adaptar:**\n1. Cambiar el path del webhook a tu ruta\n2. Adaptar las validaciones del IF\n3. Agregar ramas al Switch según tus tipos\n4. Conectar cada rama a su lógica",
+        "color": 5,
+        "width": 450,
+        "height": 260
+      },
+      "id": "node-sticky-header",
+      "name": "Doc — Header",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-400, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3},
+          "conditions": [
+            {
+              "id": "cond-tipo",
+              "leftValue": "={{ $json.body.tipo }}",
+              "rightValue": "",
+              "operator": {"type": "string", "operation": "notEmpty"}
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-if",
+      "name": "Validar: tipo presente",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Validación de entrada\n\n**Valida:** que el campo 'tipo' esté presente en el body\n\n**Si falla:** responde 400 Bad Request\n**Si pasa:** responde 202 Accepted y procesa async\n\n**Agregar más validaciones aquí:**\n- ID presente y no vacío\n- enum de tipos válidos\n- tenant_id si es multi-tenant",
+        "color": 1,
+        "width": 380,
+        "height": 200
+      },
+      "id": "node-sticky-validation",
+      "name": "Doc — Validación",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: 'accepted', message: 'Processing'}) }}",
+        "options": {"responseCode": 202}
+      },
+      "id": "node-respond-ok",
+      "name": "Responder 202 Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({error: 'Validation failed', message: 'campo tipo es requerido'}) }}",
+        "options": {"responseCode": 400}
+      },
+      "id": "node-respond-error",
+      "name": "Responder 400 Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 440]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [{
+                  "leftValue": "={{ $('Webhook').item.json.body.tipo }}",
+                  "rightValue": "tipo_a",
+                  "operator": {"type": "string", "operation": "equals"}
+                }]
+              },
+              "outputKey": "tipo_a"
+            },
+            {
+              "conditions": {
+                "conditions": [{
+                  "leftValue": "={{ $('Webhook').item.json.body.tipo }}",
+                  "rightValue": "tipo_b",
+                  "operator": {"type": "string", "operation": "equals"}
+                }]
+              },
+              "outputKey": "tipo_b"
+            }
+          ]
+        }
+      },
+      "id": "node-switch",
+      "name": "Switch por tipo",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [720, 200]
+    },
+    {
+      "parameters": {
+        "content": "## Despacho por tipo\n\n**Switch critera:** campo 'tipo' del body del webhook\n**Tipos actuales:** tipo_a, tipo_b\n\n**Para agregar más ramas:**\n1. Editar el Switch node\n2. Agregar nueva condition con el valor del tipo\n3. Conectar la nueva salida a tu lógica\n\n**Recuerda:** Usar $('Webhook').item.json.body.tipo\nen lugar de $json.tipo para robustez",
+        "color": 3,
+        "width": 380,
+        "height": 220
+      },
+      "id": "node-sticky-logic",
+      "name": "Doc — Lógica",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [680, -80]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {"id": "1", "name": "tipo", "value": "={{ $('Webhook').item.json.body.tipo }}", "type": "string"},
+            {"id": "2", "name": "resultado", "value": "procesado como tipo_a", "type": "string"}
+          ]
+        }
+      },
+      "id": "node-proceso-a",
+      "name": "Procesar tipo_a",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 140]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {"id": "1", "name": "tipo", "value": "={{ $('Webhook').item.json.body.tipo }}", "type": "string"},
+            {"id": "2", "name": "resultado", "value": "procesado como tipo_b", "type": "string"}
+          ]
+        }
+      },
+      "id": "node-proceso-b",
+      "name": "Procesar tipo_b",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Output\n\n**Conectar aquí:** los nodos finales de cada rama\n\n**Típicamente:**\n- Actualizar BD (Supabase/Airtable)\n- Enviar notificación (Slack/email)\n- Llamar callback al sistema origen\n- Registrar métricas\n\n**Agregar nodos:**\n- HTTP Request → Supabase para persistir\n- Notificación si hay error",
+        "color": 4,
+        "width": 340,
+        "height": 220
+      },
+      "id": "node-sticky-output",
+      "name": "Doc — Output",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1200, 40]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Validar: tipo presente", "type": "main", "index": 0}]]
+    },
+    "Validar: tipo presente": {
+      "main": [
+        [{"node": "Responder 202 Accepted", "type": "main", "index": 0}],
+        [{"node": "Responder 400 Error", "type": "main", "index": 0}]
+      ]
+    },
+    "Responder 202 Accepted": {
+      "main": [[{"node": "Switch por tipo", "type": "main", "index": 0}]]
+    },
+    "Switch por tipo": {
+      "main": [
+        [{"node": "Procesar tipo_a", "type": "main", "index": 0}],
+        [{"node": "Procesar tipo_b", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": ["starter", "webhook", "router", "n8n-automation-kit"]
+}
