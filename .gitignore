@@ -6,10 +6,9 @@
 *api_key*
 *.credentials
 
-# MCP con credenciales reales — el .mcp.json del repo es el template
-# Descomenta si quieres tener un .mcp.json local con tus credenciales
-# y no quieres que se suba:
-# .mcp.json
+# MCP con credenciales reales — nunca subir al repo
+# El template está en .mcp.json.example
+.mcp.json
 
 # Workflows personales — no se comparten (tienen IDs de credenciales específicos)
 workflows/*.json

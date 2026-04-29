@@ -52,7 +52,15 @@ Reinicia Claude Code. La skill aparece disponible automáticamente.
 
 ### Paso 3 — Configurar tus credenciales
 
-**3a. Editar `.mcp.json`** — reemplazar los placeholders con tus datos reales:
+**3a. Copiar el template de MCP y rellenar con tus datos:**
+
+```bash
+cp .mcp.json.example .mcp.json
+```
+
+> `.mcp.json` está en `.gitignore` — tus credenciales nunca se subirán al repo.
+
+Editar `.mcp.json` y reemplazar los placeholders:
 
 ```json
 {
