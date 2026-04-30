@@ -15,7 +15,8 @@ n8n-automation-kit/
 ├── MEMORY.md                        ← Sistema de autoaprendizaje (Claude lo actualiza solo)
 ├── skills/
 │   ├── n8n-coolify-fullstack/       ← Skill exclusiva — instalar en ~/.claude/skills/
-│   └── make-to-n8n/                 ← Skill para migrar escenarios Make → n8n
+│   ├── make-to-n8n/                 ← Skill para migrar escenarios Make → n8n
+│   └── n8n-sdk-rules/               ← Reglas canónicas del @n8n/workflow-sdk oficial
 ├── agents/
 │   └── workflow-architect/          ← Subagente que diseña planes completos de workflows
 ├── docs/
@@ -48,6 +49,7 @@ claude   # Abrir Claude Code desde aquí
 ```bash
 cp -r skills/n8n-coolify-fullstack ~/.claude/skills/
 cp -r skills/make-to-n8n ~/.claude/skills/
+cp -r skills/n8n-sdk-rules ~/.claude/skills/
 ```
 
 Reinicia Claude Code. Las skills aparecen disponibles automáticamente.
@@ -144,6 +146,22 @@ Combina 5 módulos que trabajan juntos en proyectos de producción:
 | `dual-layer-validation.md` | Validación en dos capas: MCP (estructura) + Playwright E2E (visual con sesión) |
 | `sub-workflow-patterns.md` | Cuándo crear sub-workflows, cómo pasar datos, el gotcha del `type: "string"` |
 | `microservice-integration.md` | Integrar microservicios Docker con n8n: patrones síncrono, callback, polling |
+
+---
+
+## La skill canónica: n8n-sdk-rules
+
+Reglas de generación extraídas directamente del `@n8n/workflow-sdk` oficial de n8n (v0.12.1). El equipo de n8n escribió este contenido específicamente para guiar a agentes de IA — no es documentación de usuario.
+
+| Módulo | Qué contiene |
+|---|---|
+| `workflow-rules.md` | 4 reglas estrictas: nunca `alwaysOutputData: true`, cuándo usar `executeOnce: true`, elegir el primitivo de control de flujo correcto, credenciales siempre via credentials manager |
+| `expression-gotchas.md` | Los 3 contextos donde `$json` es inseguro (AI Agent subnodes, multi-branch fan-in, nodos no inmediatos) + referencia completa de variables y Luxon |
+| `node-selection.md` | Selección de nodo por caso de uso, triggers, preferencia de nativos sobre Code node, patrones de AI tools y multi-agent |
+| `parameter-guides.md` | Guías detalladas: IF (operadores completos), Set (tipos), Switch, Webhook (responseMode), HTTP Request (auth), Tool nodes (`$fromAI`), AI Agent (system vs user message) |
+| `best-practices.md` | Patrones por categoría: chatbot (memoria compartida, session keys), notificaciones (multi-canal en paralelo), scheduling (condicional > cron complejo), human-in-the-loop (Wait node + resumeUrl) |
+
+**Se activa automáticamente** al crear o editar cualquier workflow n8n. Previene los errores más comunes antes de que ocurran.
 
 ---
 
