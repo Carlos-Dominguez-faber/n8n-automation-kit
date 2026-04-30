@@ -14,7 +14,8 @@ n8n-automation-kit/
 ├── CLAUDE.md                        ← Cuestionario de contexto para Claude (rellenar)
 ├── MEMORY.md                        ← Sistema de autoaprendizaje (Claude lo actualiza solo)
 ├── skills/
-│   └── n8n-coolify-fullstack/       ← Skill exclusiva — instalar en ~/.claude/skills/
+│   ├── n8n-coolify-fullstack/       ← Skill exclusiva — instalar en ~/.claude/skills/
+│   └── make-to-n8n/                 ← Skill para migrar escenarios Make → n8n
 ├── agents/
 │   └── workflow-architect/          ← Subagente que diseña planes completos de workflows
 ├── docs/
@@ -42,13 +43,14 @@ claude   # Abrir Claude Code desde aquí
 
 > **Por qué trabajar desde este directorio:** Claude Code lee el `.mcp.json`, `CLAUDE.md` y `MEMORY.md` desde la raíz del proyecto. Al abrir Claude Code aquí, ya tiene todo el contexto configurado.
 
-### Paso 2 — Instalar la skill exclusiva
+### Paso 2 — Instalar las skills
 
 ```bash
 cp -r skills/n8n-coolify-fullstack ~/.claude/skills/
+cp -r skills/make-to-n8n ~/.claude/skills/
 ```
 
-Reinicia Claude Code. La skill aparece disponible automáticamente.
+Reinicia Claude Code. Las skills aparecen disponibles automáticamente.
 
 ### Paso 3 — Configurar tus credenciales
 
@@ -142,6 +144,25 @@ Combina 5 módulos que trabajan juntos en proyectos de producción:
 | `dual-layer-validation.md` | Validación en dos capas: MCP (estructura) + Playwright E2E (visual con sesión) |
 | `sub-workflow-patterns.md` | Cuándo crear sub-workflows, cómo pasar datos, el gotcha del `type: "string"` |
 | `microservice-integration.md` | Integrar microservicios Docker con n8n: patrones síncrono, callback, polling |
+
+---
+
+## La skill de migración: make-to-n8n
+
+Convierte escenarios Make (Integromat) a workflows n8n. Se activa automáticamente cuando pegas un JSON exportado de Make o describes un flujo que quieres migrar.
+
+| Módulo | Qué contiene |
+|---|---|
+| `SKILL.md` | Tabla de conceptos Make vs n8n, proceso paso a paso, patrones especiales (Iterator, Router, Repeater, Aggregator), ejemplo completo de migración |
+| `module-mapping.md` | Mapeo de ~80 módulos Make → nodo n8n exacto, con tipo de equivalencia y snippets para módulos sin equivalente directo |
+| `expression-conversion.md` | Traducción completa de sintaxis: `{{N.field}}` → `{{$node["X"].json.field}}`, todas las funciones de texto, fecha, número, array y hashing |
+
+**Cómo usarla:**
+```
+"tengo este JSON de Make, conviértelo a n8n"
+"migra este escenario de Make a un workflow n8n"
+"cómo traduzo este módulo de Make al nodo equivalente en n8n"
+```
 
 ---
 
